@@ -32,19 +32,18 @@ type CellList struct {
 	Cells []*Cell `json:"cell"`
 }
 
-
 //Road 路段停車格
 type Road struct {
-	RoadSegAvail    string `json:"roadSegAvail"`    //路段剩餘格位數
-	RoadSegFee      string `json:"roadSegFee"`      //收費標準
-	RoadSegID       string `json:"roadSegID"`       //路段ID
-	RoadSegName     string `json:"roadSegName"`     //路段名稱
-	RoadSegTmEnd    string `json:"roadSegTmEnd"`    //收費結束時間
-	RoadSegTmStart  string `json:"roadSegTmStart"`  //收費開始時間
-	RoadSegTotal    string `json:"roadSegTotal"`    //路段總格位數
-	RoadSegUpdateTm string `json:"roadSegUpdateTm"` //資料更新時間
-	RoadSegUsage    string `json:"roadSegUsage"`    //路段使用率
-	CellStatusList  CellList `json:"cellStatusList,omitempty"`  //單一停車格資訊
+	RoadSegAvail    string   `json:"roadSegAvail"`             //路段剩餘格位數
+	RoadSegFee      string   `json:"roadSegFee"`               //收費標準
+	RoadSegID       string   `json:"roadSegID"`                //路段ID
+	RoadSegName     string   `json:"roadSegName"`              //路段名稱
+	RoadSegTmEnd    string   `json:"roadSegTmEnd"`             //收費結束時間
+	RoadSegTmStart  string   `json:"roadSegTmStart"`           //收費開始時間
+	RoadSegTotal    string   `json:"roadSegTotal"`             //路段總格位數
+	RoadSegUpdateTm string   `json:"roadSegUpdateTm"`          //資料更新時間
+	RoadSegUsage    string   `json:"roadSegUsage"`             //路段使用率
+	CellStatusList  CellList `json:"cellStatusList,omitempty"` //單一停車格資訊
 }
 
 //Data xml最外層
@@ -83,10 +82,7 @@ func main() {
 		fmt.Printf("第%d筆:%+v\n", index, element)
 		roadKey := datastore.IncompleteKey("Parkings", nil)
 		roadKeys = append(roadKeys, roadKey)
-		if()
-		if index == 4 {
-			break
-		}
+
 	}
 
 	ctx := context.Background()
