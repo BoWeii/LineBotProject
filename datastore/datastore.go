@@ -84,6 +84,7 @@ func main() {
 	if err := json.Unmarshal([]byte(pjson.String()[9:len(pjson.String())-2]), &data); err != nil {
 		fmt.Println("error:", err)
 	}
+	
 	for index, road := range data.ROAD {
 		fmt.Printf("%d\n", index)
 		roadKey := datastore.NameKey("Parkings", road.RoadSegName, nil)
