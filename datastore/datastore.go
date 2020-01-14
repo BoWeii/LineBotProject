@@ -34,16 +34,16 @@ type CellList struct {
 
 //Road 路段停車格
 type Road struct {
-	RoadSegAvail    string   `json:"roadSegAvail"`             //路段剩餘格位數
-	RoadSegFee      string   `json:"roadSegFee"`               //收費標準
-	RoadSegID       string   `json:"roadSegID"`                //路段ID
-	RoadSegName     string   `json:"roadSegName"`              //路段名稱
-	RoadSegTmEnd    string   `json:"roadSegTmEnd"`             //收費結束時間
-	RoadSegTmStart  string   `json:"roadSegTmStart"`           //收費開始時間
-	RoadSegTotal    string   `json:"roadSegTotal"`             //路段總格位數
-	RoadSegUpdateTm string   `json:"roadSegUpdateTm"`          //資料更新時間
-	RoadSegUsage    string   `json:"roadSegUsage"`             //路段使用率
-	CellStatusList  CellList `json:"cellStatusList,omitempty"` //單一停車格資訊
+	RoadSegAvail    string          `json:"roadSegAvail"`                 //路段剩餘格位數
+	RoadSegFee      string          `json:"roadSegFee"`                   //收費標準
+	RoadSegID       string          `json:"roadSegID"`                    //路段ID
+	RoadSegName     string          `json:"roadSegName"`                  //路段名稱
+	RoadSegTmEnd    string          `json:"roadSegTmEnd"`                 //收費結束時間
+	RoadSegTmStart  string          `json:"roadSegTmStart"`               //收費開始時間
+	RoadSegTotal    string          `json:"roadSegTotal"`                 //路段總格位數
+	RoadSegUpdateTm string          `json:"roadSegUpdateTm"`              //資料更新時間
+	RoadSegUsage    string          `json:"roadSegUsage"`                 //路段使用率
+	CellStatusList  json.RawMessage `json:"cellStatusList" datastore:"-"` //單一停車格資訊
 }
 
 //Data xml最外層
@@ -65,26 +65,6 @@ func main() {
 		panic("That's embarrassing...")
 	}
 
-	//fmt.Println(pjson.String()[9 : len(pjson.String())-2])
-	var data Data
-	var cells CellList
-	roadKeys := []*datastore.Key{}
-	cellKeys := []*datastore.Key{}
-	er := json.Unmarshal([]byte(pjson.String()[9:len(pjson.String())-2]), &struct {
-		*Data
-		*CellList
-	}{&data, &cells})
-
-	if er != nil {
-		fmt.Println("error:", er)
-	}
-	for index, element := range data.ROAD {
-		fmt.Printf("第%d筆:%+v\n", index, element)
-		roadKey := datastore.IncompleteKey("Parkings", nil)
-		roadKeys = append(roadKeys, roadKey)
-
-	}
-
 	ctx := context.Background()
 
 	// Set your Google Cloud Platform project ID.
@@ -96,9 +76,43 @@ func main() {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
+	//fmt.Println(pjson.String()[9 : len(pjson.String())-2])
+	var data Data
+	// var cells CellList
+	roadKeys := []*datastore.Key{}
+	// cellKeys := []*datastore.Key{}
+
+	if err := json.Unmarshal([]byte(pjson.String()[9:len(pjson.String())-2]), &data); err != nil {
+		fmt.Println("error:", err)
+	}
+	for index, road := range data.ROAD {
+		fmt.Printf("%s\n", road.RoadSegName)
+		roadKey := datastore.NameKey("Parkings", road.RoadSegName, nil)
+		roadKeys = append(roadKeys, roadKey)
+		var cells CellList
+		er := json.Unmarshal(road.CellStatusList, &cells)
+		if er != nil {
+			cellKeys := []*datastore.Key{}
+			if len(cells.Cells) != 0 {
+				for _, cell := range cells.Cells {
+					cellKey := datastore.IncompleteKey("Cells", roadKey)
+					cellKeys = append(cellKeys, cellKey)
+					fmt.Printf("第%s筆cells:%+v\n", road.RoadSegName, cell)
+				}
+				if _, err := client.PutMulti(ctx, cellKeys, cells.Cells); err != nil {
+					log.Fatalf("Failed to save cell: %v", err)
+				}
+			}
+		}
+
+		if index == 4 {
+			break
+		}
+	}
+
 	// Saves the new entity.
 	if _, err := client.PutMulti(ctx, roadKeys[:5], data.ROAD[:5]); err != nil {
-		log.Fatalf("Failed to save task: %v", err)
+		log.Fatalf("Failed to save road: %v", err)
 	}
 
 	fmt.Printf("Saved sucess")
