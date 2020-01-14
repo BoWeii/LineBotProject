@@ -85,12 +85,13 @@ func main() {
 		fmt.Println("error:", err)
 	}
 	for index, road := range data.ROAD {
-		fmt.Printf("%s\n", road.RoadSegName)
+		fmt.Printf("%d\n", index)
 		roadKey := datastore.NameKey("Parkings", road.RoadSegName, nil)
 		roadKeys = append(roadKeys, roadKey)
 		var cells CellList
 		er := json.Unmarshal(road.CellStatusList, &cells)
-		if er != nil {
+		if er == nil {
+			fmt.Printf("%s\n", road.RoadSegName)
 			cellKeys := []*datastore.Key{}
 			if len(cells.Cells) != 0 {
 				for _, cell := range cells.Cells {
@@ -100,9 +101,12 @@ func main() {
 				}
 				if _, err := client.PutMulti(ctx, cellKeys, cells.Cells); err != nil {
 					log.Fatalf("Failed to save cell: %v", err)
+				}else{
+					fmt.Printf("cells Saved sucess")
 				}
 			}
 		}
+		
 
 		if index == 4 {
 			break
