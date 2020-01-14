@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"cloud.google.com/go/datastore"
-
 	xml2json "github.com/basgys/goxml2json"
 )
 
