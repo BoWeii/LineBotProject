@@ -1,7 +1,7 @@
 /*$env:GOOGLE_APPLICATION_CREDENTIALS=
 "C:\Users\wei14\Desktop\ParkingProject\[ParkingProject-9785d4e7adb0].json"*/
 
-package main
+package datastore
 
 import (
 	"compress/gzip"
@@ -52,7 +52,7 @@ type Data struct {
 	ROAD []*Road `json:"ROAD"`
 }
 
-func main() {
+func putParkingInfo() {
 	//取open data
 	fileURL := "https://tcgbusfs.blob.core.windows.net/blobtcmsv/TCMSV_roadquery.gz"
 	TPEParkingInfo, err := GetParkingInfo(fileURL)
