@@ -10,11 +10,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"strings"
 
 	"cloud.google.com/go/datastore"
 	xml2json "github.com/basgys/goxml2json"
+
 )
 
 //Cell 單一停車狀態
@@ -51,75 +53,77 @@ type Data struct {
 }
 
 func main() {
+	//取open data
 	fileURL := "https://tcgbusfs.blob.core.windows.net/blobtcmsv/TCMSV_roadquery.gz"
 	TPEParkingInfo, err := GetParkingInfo(fileURL)
 	if err != nil {
 		panic(err)
 	}
-	//	fmt.Printf(TPEParkingInfo)
 
+	//xml轉json
 	var xml = strings.NewReader(TPEParkingInfo)
 	pjson, err := xml2json.Convert(xml)
 	if err != nil {
-		panic("That's embarrassing...")
+		panic("Failed to convert xml to json")
 	}
 
+	//連結datastore
 	ctx := context.Background()
-
-	// Set your Google Cloud Platform project ID.
 	projectID := "parkingproject-261207"
-
-	// Creates a client.
 	client, err := datastore.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
-	//fmt.Println(pjson.String()[9 : len(pjson.String())-2])
 	var data Data
-	// var cells CellList
 	roadKeys := []*datastore.Key{}
-	// cellKeys := []*datastore.Key{}
 
+	//json轉struct
 	if err := json.Unmarshal([]byte(pjson.String()[9:len(pjson.String())-2]), &data); err != nil {
-		fmt.Println("error:", err)
+		log.Fatalf("error: %v", err)
 	}
-	
-	for index, road := range data.ROAD {
-		fmt.Printf("%d\n", index)
-		roadKey := datastore.NameKey("Parkings", road.RoadSegName, nil)
+
+	//以roadID產生entity key
+	for _, road := range data.ROAD {
+
+		roadKey := datastore.NameKey("Parkings", road.RoadSegID, nil)
 		roadKeys = append(roadKeys, roadKey)
-		var cells CellList
-		er := json.Unmarshal(road.CellStatusList, &cells)
-		if er == nil {
-			fmt.Printf("%s\n", road.RoadSegName)
-			cellKeys := []*datastore.Key{}
-			if len(cells.Cells) != 0 {
-				for _, cell := range cells.Cells {
-					cellKey := datastore.IncompleteKey("Cells", roadKey)
-					cellKeys = append(cellKeys, cellKey)
-					fmt.Printf("第%s筆cells:%+v\n", road.RoadSegName, cell)
-				}
-				if _, err := client.PutMulti(ctx, cellKeys, cells.Cells); err != nil {
-					log.Fatalf("Failed to save cell: %v", err)
-				}else{
-					fmt.Printf("cells Saved sucess")
-				}
-			}
-		}
-		
 
-		if index == 4 {
-			break
-		}
+		/*單一車格資訊，因缺少座標故先不用*/
+
+		// var cells CellList
+		// if err := json.Unmarshal(road.CellStatusList, &cells); err == nil {
+		// 	cellKeys := []*datastore.Key{}
+		// 	if len(cells.Cells) != 0 {
+		// 		for i := 0; i < len(cells.Cells); i++ {
+		// 			cellKey := datastore.IncompleteKey("Cells", roadKey)
+		// 			cellKeys = append(cellKeys, cellKey)
+		// 		}
+
+		// 		if _, err := client.PutMulti(ctx, cellKeys, cells.Cells); err != nil {
+		// 			log.Fatalf("PutMulti: %v", err)
+		// 		} else {
+		// 			fmt.Printf("%s cells Saved sucess", road.RoadSegName)
+		// 		}
+		// 	}
+		// }
+
 	}
 
-	// Saves the new entity.
-	if _, err := client.PutMulti(ctx, roadKeys[:5], data.ROAD[:5]); err != nil {
-		log.Fatalf("Failed to save road: %v", err)
+	//put路段資訊
+	var tmp = 0
+	n := math.Ceil(float64(len(roadKeys)) / 500) //一次最多put500筆
+	for i := 1; i <= int(n); i++ {
+		var size int
+		if size = len(roadKeys); i*500 < len(roadKeys) {
+			size = i * 500
+		}
+		if _, err := client.PutMulti(ctx, roadKeys[tmp:size-1], data.ROAD[tmp:size-1]); err != nil {
+			log.Fatalf("PutMulti: %v", err)
+		}
+		tmp = size - 1
 	}
-
-	fmt.Printf("Saved sucess")
+	fmt.Printf("Roads Saved sucess")
 }
 
 //GetParkingInfo 取得停車格資訊(TPE)
