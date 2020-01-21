@@ -1,4 +1,5 @@
 pkg/
 bin/
+src/test/main.go
 src/cmd/_debug_bin
 .vscode/

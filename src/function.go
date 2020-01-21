@@ -1,6 +1,3 @@
-/*$env:GOOGLE_APPLICATION_CREDENTIALS=
-"C:\Users\wei14\Desktop\ParkingProject\[ParkingProject-9785d4e7adb0].json"*/
-
 package datastore
 
 import (
