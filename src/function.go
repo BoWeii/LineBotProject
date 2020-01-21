@@ -24,8 +24,8 @@ type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
 
-//Cell 單一停車狀態
-type Cell struct {
+//cell 單一停車狀態
+type cell struct {
 	CellStatus string `json:"cellStatus"` //停車格位狀態(1：車格有車輛停放；2：車格無車輛停放；3：無訊息)
 	CoordX     string `json:"coord_X"`    //停車格位X座標
 	CoordY     string `json:"coord_Y"`    //停車格位Y座標
@@ -33,13 +33,13 @@ type Cell struct {
 	PsID       string `json:"psId"`       //停車格位格號
 }
 
-//CellList 停車格清單
-type CellList struct {
-	Cells []*Cell `json:"cell"`
+//cellList 停車格清單
+type cellList struct {
+	Cells []*cell `json:"cell"`
 }
 
-//Road 路段停車格
-type Road struct {
+//road 路段停車格
+type road struct {
 	RoadSegAvail    string          `json:"roadSegAvail"`                 //路段剩餘格位數
 	RoadSegFee      string          `json:"roadSegFee"`                   //收費標準
 	RoadSegID       string          `json:"roadSegID"`                    //路段ID
@@ -52,9 +52,9 @@ type Road struct {
 	CellStatusList  json.RawMessage `json:"cellStatusList" datastore:"-"` //單一停車格資訊
 }
 
-//Data xml最外層
-type Data struct {
-	ROAD []*Road `json:"ROAD"`
+//data xml最外層
+type data struct {
+	ROAD []*road `json:"ROAD"`
 }
 
 //PutParkingInfo consumes a Pub/Sub message 並更新停車位資訊
@@ -62,7 +62,7 @@ func PutParkingInfo(ctx context.Context, m PubSubMessage) error {
 	log.Println(string(m.Data))
 	//取open data
 	fileURL := "https://tcgbusfs.blob.core.windows.net/blobtcmsv/TCMSV_roadquery.gz"
-	TPEParkingInfo, err := GetParkingInfo(fileURL)
+	TPEParkingInfo, err := getParkingInfo(fileURL)
 	if err != nil {
 		panic(err)
 	}
@@ -73,7 +73,7 @@ func PutParkingInfo(ctx context.Context, m PubSubMessage) error {
 	if err != nil {
 		panic("Failed to convert xml to json")
 	}
-	
+
 	//連結datastore
 	//ctx := context.Background()
 
@@ -83,16 +83,16 @@ func PutParkingInfo(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
-	var data Data
+	var openData data
 	roadKeys := []*datastore.Key{}
 
 	//json轉struct
-	if err := json.Unmarshal([]byte(pjson.String()[9:len(pjson.String())-2]), &data); err != nil {
+	if err := json.Unmarshal([]byte(pjson.String()[9:len(pjson.String())-2]), &openData); err != nil {
 		log.Fatalf("error: %v", err)
 	}
 
 	//以roadID產生entity key
-	for _, road := range data.ROAD {
+	for _, road := range openData.ROAD {
 
 		roadKey := datastore.NameKey("Parkings", road.RoadSegID, nil)
 		roadKeys = append(roadKeys, roadKey)
@@ -126,7 +126,7 @@ func PutParkingInfo(ctx context.Context, m PubSubMessage) error {
 		if size = len(roadKeys); i*500 < len(roadKeys) {
 			size = i * 500
 		}
-		if _, err := client.PutMulti(ctx, roadKeys[tmp:size-1], data.ROAD[tmp:size-1]); err != nil {
+		if _, err := client.PutMulti(ctx, roadKeys[tmp:size-1], openData.ROAD[tmp:size-1]); err != nil {
 			log.Fatalf("PutMulti: %v", err)
 		}
 		tmp = size - 1
@@ -136,7 +136,7 @@ func PutParkingInfo(ctx context.Context, m PubSubMessage) error {
 }
 
 //GetParkingInfo 取得停車格資訊(TPE)
-func GetParkingInfo(url string) (string, error) {
+func getParkingInfo(url string) (string, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -155,7 +155,6 @@ func GetParkingInfo(url string) (string, error) {
 	}
 
 	defer resp.Body.Close()
-	
 	return string(body), nil
 }
 
