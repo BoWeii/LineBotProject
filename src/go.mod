@@ -1,4 +1,4 @@
-module project/datastore
+module project.com/datastore
 
 go 1.13
 
