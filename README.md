@@ -36,5 +36,5 @@
 
 2. cmd 執行
     ```bash
-    gcloud functions deploy PutParkingInfo --source https://source.developers.google.com/projects/parkingproject-261207/repos/github_wei02427_linebotproject/moveable-aliases/master/paths/資料夾名稱 --runtime=go113 --trigger-topic=updateInfo
+    gcloud functions deploy 執行函數名稱 --source https://source.developers.google.com/projects/parkingproject-261207/repos/github_wei02427_linebotproject/moveable-aliases/master/paths/資料夾名稱 --runtime=go113 --trigger-http
     ```
