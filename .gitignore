@@ -1,4 +1,4 @@
 pkg/
 bin/
-src/_debug_bin
+src/cmd/_debug_bin
 .vscode/

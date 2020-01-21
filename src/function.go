@@ -155,7 +155,7 @@ func GetParkingInfo(url string) (string, error) {
 	}
 
 	defer resp.Body.Close()
-
+	
 	return string(body), nil
 }
 
