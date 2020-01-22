@@ -1,4 +1,5 @@
 pkg/
 bin/
 src/cmd/_debug_bin
+src/fulfillment/ngrok.exe
 .vscode/
