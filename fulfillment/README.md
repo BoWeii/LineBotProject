@@ -8,7 +8,7 @@
 
     ```json
     {
-        "responseId": ...,
+        "responseId": "...",
         "session": "projects/your-agents-project-id/agent/sessions/88d13aa8-2999-4f71-b233-39cbf3a824a0",
         "queryResult": {
             "queryText": "使用者原始查詢語句",
@@ -126,6 +126,7 @@
 
 ## 本地除錯
 
+>*先將 ngrok.exe 放到 fulfillment/*
 1. 執行 main.go
 
 2. 將 localhost 部署到 ngrok
