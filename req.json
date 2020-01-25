@@ -1,0 +1,21 @@
+{
+    "events": [
+        {
+            "type": "message",
+            "replyToken": "c5e790bc75db4b34a7a6f2e2cf126bc0",
+            "source": {
+                "userId": "Ud1c076365b8080a1d3d936f3b27eed9c",
+                "type": "user"
+            },
+            "timestamp": 1579936003549,
+            "mode": "active",
+            "message": {
+                "type": "text",
+                "id": "11316622049703",
+                "text": "哦哦哦哦哦"
+            }
+        }
+    ],
+    "destination": "Ucbb0c18dae6241ee11e8bd391b7e425c"
+}
+
