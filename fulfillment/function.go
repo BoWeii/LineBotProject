@@ -81,14 +81,10 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 		if event.Type == linebot.EventTypeMessage {
 			switch message := event.Message.(type) {
 			case *linebot.TextMessage:
-				log.Println(reflect.TypeOf(message.Text))
 				response := dp.processNLP(message.Text, "testUser")
-				fmt.Printf("before reply====>%#v", response)
 				text:=response.Intent
-				fmt.Print("#######",text)
-				fmt.Print("&&&",response.Entities["RoadName"])
 				if text == "FindParking"{
-					text = GetData(response.Entities["RoadName"],response.Intent)
+					text = getData(response.Entities["RoadName"],response.Intent)
 				} else{
 					text = "我聽不太懂"
 				}	
@@ -98,7 +94,6 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-
 }
 
 func (dp *DialogflowProcessor) init(data ...string) (err error) {
@@ -106,7 +101,6 @@ func (dp *DialogflowProcessor) init(data ...string) (err error) {
 	dp.authJSONFilePath = data[1]
 	dp.lang = data[2]
 	dp.timeZone = data[3]
-	log.Printf("secret::::: %s",dp.authJSONFilePath)
 	// Auth process: https://dialogflow.com/docs/reference/v2-auth-setup
 
 	dp.ctx = context.Background()
@@ -115,7 +109,6 @@ func (dp *DialogflowProcessor) init(data ...string) (err error) {
 		log.Fatal("Error in auth with Dialogflow===",err)
 	}
 	dp.sessionClient = sessionClient
-
 	return
 }
 
@@ -150,10 +143,6 @@ func (dp *DialogflowProcessor) processNLP(rawMessage string, username string) (r
 	fmt.Println("parmas=",params)
 	if len(params) > 0 {
 		for paramName, p := range params {
-			fmt.Println("type of p ===",reflect.TypeOf(p))
-			fmt.Println("Param %s", paramName)
-			fmt.Println("two ==== %s", p.GetStringValue())
-			fmt.Println("three ==== %s", p.String())
 			extractedValue := extractDialogflowEntities(p)
 			r.Entities[paramName] = extractedValue
 		}
@@ -198,10 +187,10 @@ func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 		return ""
 	}
 }
-// GetData  找車位資料
-func GetData(roadName string,intent string) (resp string){
+// getData  找車位資料
+func getData(roadName string,intent string) (data string){
 	if roadName == ""{
-		resp="哪一條路上的車位呢?"
+		data="哪一條路上的車位呢?"
 		return
 	} 
 	
@@ -231,13 +220,12 @@ func GetData(roadName string,intent string) (resp string){
  		}
  		fmt.Printf("RoadName %s, RoadSegAvail %s\n", road.RoadSegName, road.RoadSegAvail)
 		
-		resp=road.RoadSegName + "有 " + road.RoadSegAvail + " 個車位"
+		data=road.RoadSegName + "有 " + road.RoadSegAvail + " 個車位"
  		// w.Header().Set("Content-Type", "application/json")
  		// response := response{
  		// 	FulfillmentText: road.RoadSegName + "有 " + road.RoadSegAvail + " 個車位",
  		// }
  		// json.NewEncoder(w).Encode(response)
-
 	 }
 	return
  	// defer r.Body.Close()
