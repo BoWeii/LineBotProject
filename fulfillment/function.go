@@ -90,8 +90,14 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(text)).Do(); err != nil {
 					log.Print(err)
 				}
+			case *linebot.ImageMessage:
+				fmt.Print("image")
+			case *linebot.LocationMessage:
+				fmt.Print("location:",message.Address)
 			}
 		}
+		
+		
 	}
 }
 
