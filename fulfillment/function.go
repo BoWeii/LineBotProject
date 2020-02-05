@@ -15,7 +15,7 @@ import (
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/line/line-bot-sdk-go/linebot"
 	"google.golang.org/api/iterator"
-	//"google.golang.org/api/option"
+	"google.golang.org/api/option"
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 
 )
@@ -62,23 +62,24 @@ type response struct {
 
 func init() {
 	bot, err = linebot.New("57cc60c3fc1530cc32ba896e1c4b7856", "GiKIwKk+Lwku0WeGEGnlEDBDDGC67tQVCSIMbcQaKpA2IyZPU6OgVSIdI0h1HUUG2Ky/psNLEEkjfnEZGITnJolxlEScGgLoWT/iKpwyinf/IJDgeB5gnIB0zmuag0vYlcs7WgOYdUg0CwbGXlWKIwdB04t89/1O/w1cDnyilFU=")
-	dp.init("parkingproject-261207" /*, "parkingproject-261207-2933e4112308.json"*/, "zh-TW", "Asia/Hong_Kong")
+	dp.init("parkingproject-261207", "../parkingproject-261207-2933e4112308.json", "zh-TW", "Asia/Hong_Kong")
 }
 
 //Fulfillment 查詢車位
 func Fulfillment(w http.ResponseWriter, r *http.Request) {
 
+	var events []*linebot.Event
 	events, err = bot.ParseRequest(r)
 
 	if err != nil {
 		if err == linebot.ErrInvalidSignature {
 			w.WriteHeader(400)
-			log.Fatal(err)
+			log.Print(err)
 		} else {
 			w.WriteHeader(500)
-			log.Fatal(err)
+			log.Print(err)
 		}
-		return
+
 	} else {
 		w.WriteHeader(200)
 	}
@@ -110,13 +111,13 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 //pointer receiver
 func (dp *DialogflowProcessor) init(data ...string) (err error) {
 	dp.projectID = data[0]
-	//dp.authJSONFilePath = data[1]
-	dp.lang = data[1]
-	dp.timeZone = data[2]
+	dp.authJSONFilePath = data[1]
+	dp.lang = data[2]
+	dp.timeZone = data[3]
 	// Auth process: https://dialogflow.com/docs/reference/v2-auth-setup
 
 	dp.ctx = context.Background()
-	sessionClient, err := dialogflow.NewSessionsClient(dp.ctx) //, option.WithCredentialsFile(dp.authJSONFilePath))
+	sessionClient, err := dialogflow.NewSessionsClient(dp.ctx, option.WithCredentialsFile(dp.authJSONFilePath))
 	if err != nil {
 		log.Fatal("Error in auth with Dialogflow：", err)
 	}
@@ -133,7 +134,7 @@ func (dp *DialogflowProcessor) processNLP(rawMessage string, username string) (r
 		QueryInput: &dialogflowpb.QueryInput{
 			Input: &dialogflowpb.QueryInput_Text{
 				Text: &dialogflowpb.TextInput{
-					Text:         "我想找車位", //rawMessage,
+					Text:         rawMessage,
 					LanguageCode: dp.lang,
 				},
 			},
