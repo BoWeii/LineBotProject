@@ -60,6 +60,7 @@ type response struct {
 	FulfillmentText string `json:"fulfillmentText"`
 }
 
+// init 初始化權限
 func init() {
 	bot, err = linebot.New("57cc60c3fc1530cc32ba896e1c4b7856", "GiKIwKk+Lwku0WeGEGnlEDBDDGC67tQVCSIMbcQaKpA2IyZPU6OgVSIdI0h1HUUG2Ky/psNLEEkjfnEZGITnJolxlEScGgLoWT/iKpwyinf/IJDgeB5gnIB0zmuag0vYlcs7WgOYdUg0CwbGXlWKIwdB04t89/1O/w1cDnyilFU=")
 	dp.init("parkingproject-261207", "parkingproject-261207-2933e4112308.json", "zh-TW", "Asia/Hong_Kong")
@@ -84,31 +85,38 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 	}
 
+	var respText string
+	//可能不只一位使用者傳送訊息
 	for _, event := range events {
+		//訊息事件 https://developers.line.biz/en/reference/messaging-api/#common-properties
 		if event.Type == linebot.EventTypeMessage {
+			//訊息種類
 			switch message := event.Message.(type) {
 			case *linebot.TextMessage:
 				response := dp.processNLP(message.Text, "testUser")
-				text := response.Intent
-				if text == "FindParking" {
-					text = getData(response.Entities["RoadName"], response.Intent)
+
+				if response.Intent == "FindParking" {
+					respText = getData(response.Entities["RoadName"], response.Intent)
 				} else {
-					text = "我聽不太懂"
+					respText = "我聽不太懂"
 				}
-				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(text)).Do(); err != nil {
-					log.Print(err)
-				}
+
 			case *linebot.ImageMessage:
 				fmt.Print("image")
 			case *linebot.LocationMessage:
 				fmt.Print("location:", message.Address)
 			}
+			//追隨事件
+		} else if event.Type == linebot.EventTypeFollow {
+			respText = "還敢加我好友啊"
 		}
-
+		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(respText)).Do(); err != nil {
+			log.Print(err)
+		}
 	}
 }
 
-//pointer receiver
+//初始化 dialogflow (pointer receiver)
 func (dp *DialogflowProcessor) init(data ...string) (err error) {
 	dp.projectID = data[0]
 	dp.authJSONFilePath = data[1]
@@ -125,7 +133,7 @@ func (dp *DialogflowProcessor) init(data ...string) (err error) {
 	return
 }
 
-//pointer receiver
+//dialogflow 分析語意 (pointer receiver)
 func (dp *DialogflowProcessor) processNLP(rawMessage string, username string) (r NLPResponse) {
 	//DetectIntentRequest struct https://godoc.org/google.golang.org/genproto/googleapis/cloud/dialogflow/v2#StreamingDetectIntentRequest
 	sessionID := username
@@ -164,14 +172,15 @@ func (dp *DialogflowProcessor) processNLP(rawMessage string, username string) (r
 	params := queryResult.Parameters.GetFields()
 	fmt.Println("parmas=", params)
 	if len(params) > 0 {
-		for paramName, p := range params {
-			extractedValue := extractDialogflowEntities(p)
+		for paramName, entity := range params {
+			extractedValue := extractDialogflowEntities(entity)
 			r.Entities[paramName] = extractedValue
 		}
 	}
 	return
 }
 
+// 解碼 Protobuf 格式
 func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 	kind := p.GetKind()
 	switch kind.(type) {
@@ -186,15 +195,6 @@ func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 		fields := s.GetFields()
 		extractedEntity = ""
 		for key, value := range fields {
-			if key == "amount" {
-				extractedEntity = fmt.Sprintf("%s%s", extractedEntity, strconv.FormatFloat(value.GetNumberValue(), 'f', 6, 64))
-			}
-			if key == "unit" {
-				extractedEntity = fmt.Sprintf("%s%s", extractedEntity, value.GetStringValue())
-			}
-			if key == "date_time" {
-				extractedEntity = fmt.Sprintf("%s%s", extractedEntity, value.GetStringValue())
-			}
 			// @TODO: Other entity types can be added here
 		}
 		return extractedEntity
@@ -224,11 +224,8 @@ func getData(roadName string, intent string) (data string) {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 
-	//取得 roadName entity
-	// buf, _ := ioutil.ReadAll(r.Body)
-	// roadName := gjson.Get(string(buf), "events.0.message.text")
-	// roadName := gjson.Get(string(buf), "queryResult.parameters.RoadName")
 	log.Printf("roadName: %s", roadName)
+
 	//datastore 查詢路段資料
 	query := datastore.NewQuery("Parkings").Filter("RoadSegName=", roadName)
 	it := client.Run(ctx, query)
@@ -244,12 +241,7 @@ func getData(roadName string, intent string) (data string) {
 		fmt.Printf("RoadName %s, RoadSegAvail %s\n", road.RoadSegName, road.RoadSegAvail)
 
 		data = road.RoadSegName + "有 " + road.RoadSegAvail + " 個車位"
-		// w.Header().Set("Content-Type", "application/json")
-		// response := response{
-		// 	FulfillmentText: road.RoadSegName + "有 " + road.RoadSegAvail + " 個車位",
-		// }
-		// json.NewEncoder(w).Encode(response)
 	}
 	return
-	// defer r.Body.Close()
+
 }
