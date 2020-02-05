@@ -69,7 +69,7 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == linebot.ErrInvalidSignature {
 			w.WriteHeader(400)
-			log.Fatal("linebot.ErrInvalidSignature")
+			log.Fatal(err)
 		} else {
 			w.WriteHeader(500)
 		}
