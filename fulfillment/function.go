@@ -2,26 +2,21 @@ package fulfillment
 
 import (
 	"context"
-	// "encoding/json"
 	"fmt"
-	// "io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 
 	"cloud.google.com/go/datastore"
-	// "github.com/tidwall/gjson"
 	dialogflow "cloud.google.com/go/dialogflow/apiv2"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/line/line-bot-sdk-go/linebot"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
+	"project.com/fulfillment/carouselmessage"
 
 )
-
-var bot *linebot.Client
-var err error
 
 //road 路段停車格
 type road struct {
@@ -36,8 +31,8 @@ type road struct {
 	RoadSegUsage    string `json:"roadSegUsage"`    //路段使用率
 }
 
-// DialogflowProcessor has all the information for connecting with Dialogflow
-type DialogflowProcessor struct {
+// dialogflowProcessor has all the information for connecting with Dialogflow
+type dialogflowProcessor struct {
 	projectID        string
 	authJSONFilePath string
 	lang             string
@@ -46,14 +41,27 @@ type DialogflowProcessor struct {
 	ctx              context.Context
 }
 
-// NLPResponse is webhook回應
-type NLPResponse struct {
+// datastoreProcessor 存取 datastore
+type datastoreProcessor struct {
+	projectID string
+	client    *datastore.Client
+	ctx       context.Context
+}
+
+// nlpResponse is webhook回應
+type nlpResponse struct {
 	Intent     string            `json:"intent"`
 	Confidence float32           `json:"confidence"`
 	Entities   map[string]string `json:"entities"`
 }
 
-var dp DialogflowProcessor
+const projectID string = "parkingproject-261207"
+
+var dialogflowProc dialogflowProcessor
+var datastoreProc datastoreProcessor
+var bot *linebot.Client
+
+var err error
 
 //response webhook回應
 type response struct {
@@ -63,7 +71,9 @@ type response struct {
 // init 初始化權限
 func init() {
 	bot, err = linebot.New("57cc60c3fc1530cc32ba896e1c4b7856", "GiKIwKk+Lwku0WeGEGnlEDBDDGC67tQVCSIMbcQaKpA2IyZPU6OgVSIdI0h1HUUG2Ky/psNLEEkjfnEZGITnJolxlEScGgLoWT/iKpwyinf/IJDgeB5gnIB0zmuag0vYlcs7WgOYdUg0CwbGXlWKIwdB04t89/1O/w1cDnyilFU=")
-	dp.init("parkingproject-261207", "parkingproject-261207-2933e4112308.json", "zh-TW", "Asia/Hong_Kong")
+	dialogflowProc.init(projectID, "parkingproject-261207-2933e4112308.json", "zh-TW", "Asia/Hong_Kong")
+	datastoreProc.init(projectID)
+
 }
 
 //Fulfillment 查詢車位
@@ -93,7 +103,7 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 			//訊息種類
 			switch message := event.Message.(type) {
 			case *linebot.TextMessage:
-				response := dp.processNLP(message.Text, "testUser")
+				response := dialogflowProc.processNLP(message.Text, "testUser")
 
 				if response.Intent == "FindParking" {
 					respText = getData(response.Entities["RoadName"], response.Intent)
@@ -110,14 +120,20 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 		} else if event.Type == linebot.EventTypeFollow {
 			respText = "還敢加我好友啊"
 		}
-		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(respText)).Do(); err != nil {
+
+		fmt.Print(respText)
+		var roads []map[string]string
+		roads = append(roads, map[string]string{"roadName": "五權路", "roadAvail": "10"})
+		roads = append(roads, map[string]string{"roadName": "忠孝東路", "roadAvail": "50"})
+		container := carouselmessage.Carouselmesage(roads)
+		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewFlexMessage("車位資訊。", container)).Do(); err != nil {
 			log.Print(err)
 		}
 	}
 }
 
 //初始化 dialogflow (pointer receiver)
-func (dp *DialogflowProcessor) init(data ...string) (err error) {
+func (dp *dialogflowProcessor) init(data ...string) (err error) {
 	dp.projectID = data[0]
 	dp.authJSONFilePath = data[1]
 	dp.lang = data[2]
@@ -125,16 +141,20 @@ func (dp *DialogflowProcessor) init(data ...string) (err error) {
 	// Auth process: https://dialogflow.com/docs/reference/v2-auth-setup
 
 	dp.ctx = context.Background()
-	sessionClient, err := dialogflow.NewSessionsClient(dp.ctx, option.WithCredentialsFile(dp.authJSONFilePath))
-	if err != nil {
-		log.Fatal("Error in auth with Dialogflow：", err)
-	}
-	dp.sessionClient = sessionClient
+	dp.sessionClient, err = dialogflow.NewSessionsClient(dp.ctx, option.WithCredentialsFile(dp.authJSONFilePath))
+
+	return
+}
+
+func (ds *datastoreProcessor) init(data string) (err error) {
+	ds.projectID = data
+	ds.ctx = context.Background()
+	ds.client, err = datastore.NewClient(ds.ctx, ds.projectID)
 	return
 }
 
 //dialogflow 分析語意 (pointer receiver)
-func (dp *DialogflowProcessor) processNLP(rawMessage string, username string) (r NLPResponse) {
+func (dp *dialogflowProcessor) processNLP(rawMessage string, username string) (r nlpResponse) {
 	//DetectIntentRequest struct https://godoc.org/google.golang.org/genproto/googleapis/cloud/dialogflow/v2#StreamingDetectIntentRequest
 	sessionID := username
 	request := dialogflowpb.DetectIntentRequest{
@@ -170,16 +190,17 @@ func (dp *DialogflowProcessor) processNLP(rawMessage string, username string) (r
 	r.Entities = make(map[string]string)
 	//The collection of extracted parameters.
 	params := queryResult.Parameters.GetFields()
-	fmt.Println("parmas=", params)
 	if len(params) > 0 {
 		for paramName, entity := range params {
 			extractedValue := extractDialogflowEntities(entity)
+			log.Printf("paramName= %s, entity= %s\n", paramName, extractedValue)
 			r.Entities[paramName] = extractedValue
 		}
 	}
 	return
 }
 
+// func (ds *datastoreProcessor) processDB()
 // 解碼 Protobuf 格式
 func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 	kind := p.GetKind()
@@ -195,6 +216,7 @@ func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 		fields := s.GetFields()
 		extractedEntity = ""
 		for key, value := range fields {
+			log.Printf("key: %s, value: %s", key, value)
 			// @TODO: Other entity types can be added here
 		}
 		return extractedEntity
@@ -217,18 +239,18 @@ func getData(roadName string, intent string) (data string) {
 		return
 	}
 
-	ctx := context.Background()
-	projectID := "parkingproject-261207"
-	client, err := datastore.NewClient(ctx, projectID)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-	}
+	// ctx := context.Background()
+	// projectID := "parkingproject-261207"
+	// client, err := datastore.NewClient(ctx, projectID)
+	// if err != nil {
+	// 	log.Fatalf("Failed to create client: %v", err)
+	// }
 
-	log.Printf("roadName: %s", roadName)
+	// log.Printf("roadName: %s", roadName)
 
 	//datastore 查詢路段資料
 	query := datastore.NewQuery("Parkings").Filter("RoadSegName=", roadName)
-	it := client.Run(ctx, query)
+	it := datastoreProc.client.Run(datastoreProc.ctx, query)
 	for {
 		var road road
 		_, err := it.Next(&road)

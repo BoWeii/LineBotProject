@@ -7,7 +7,6 @@ require (
 	cloud.google.com/go/datastore v1.0.0
 	github.com/golang/protobuf v1.3.2
 	github.com/line/line-bot-sdk-go v7.0.0+incompatible
-	github.com/tidwall/gjson v1.4.0
 	google.golang.org/api v0.15.0
 	google.golang.org/genproto v0.0.0-20191230161307-f3c370f40bfb
 )
