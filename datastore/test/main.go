@@ -9,7 +9,7 @@ import (
 
 //main 測試function執行
 func main() {
-	linebotProject.PutParkingInfo(context.Background(), linebotProject.PubSubMessage{Data: []byte("update")})
+	linebotProject.UpdateParkingInfo(context.Background(), linebotProject.PubSubMessage{Data: []byte("update")})
 }
 
 //部署指令
