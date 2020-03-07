@@ -1,13 +1,14 @@
 package carouselmessage
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/line/line-bot-sdk-go/linebot"
 
 )
 
-func bubbleContainer(roadName string, avail string, num int) (container *linebot.BubbleContainer) {
+func bubbleContainer(roadName string, lat float64, lon float64, avail int, num int) (container *linebot.BubbleContainer) {
 	container = &linebot.BubbleContainer{
 		Type: linebot.FlexContainerTypeBubble,
 		Header: &linebot.BoxComponent{
@@ -38,7 +39,7 @@ func bubbleContainer(roadName string, avail string, num int) (container *linebot
 			Contents: []linebot.FlexComponent{
 				&linebot.TextComponent{
 					Type: linebot.FlexComponentTypeText,
-					Text: "剩餘 " + avail + " 個",
+					Text: "剩餘 " + strconv.Itoa(avail) + " 個",
 				},
 			},
 		},
@@ -51,7 +52,7 @@ func bubbleContainer(roadName string, avail string, num int) (container *linebot
 					Style: linebot.FlexButtonStyleTypeLink,
 					Action: &linebot.URIAction{
 						Label: "導航",
-						URI:   "https://www.google.com/maps/search/?api=1&query=47.5951518,-122.3316393",
+						URI:   "https://www.google.com/maps/search/?api=1&query=" + fmt.Sprintf("%f", lat) + "," + fmt.Sprintf("%f", lon),
 					},
 				},
 			},
@@ -63,11 +64,11 @@ func bubbleContainer(roadName string, avail string, num int) (container *linebot
 }
 
 //Carouselmesage 產生訊息
-func Carouselmesage(roads []map[string]string) (container *linebot.CarouselContainer) {
+func Carouselmesage(roads [5][4]interface{}) (container *linebot.CarouselContainer) {
 	var bubbleConts []*linebot.BubbleContainer
 
 	for i, info := range roads {
-		bubbleConts = append(bubbleConts, bubbleContainer(info["roadName"], info["roadAvail"], i+1))
+		bubbleConts = append(bubbleConts, bubbleContainer(info[0].(string), info[1].(float64), info[2].(float64), info[3].(int), i+1))
 	}
 	container = &linebot.CarouselContainer{
 		Type:     linebot.FlexContainerTypeCarousel,

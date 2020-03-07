@@ -10,7 +10,7 @@ indexes:
       - name: PayCash
       - name: Memo
       - name: RoadID
-      - name: CellStaus
+      - name: CellStatus
       - name: IsNowCash
       - name: ParkingStatus
       - name: Lat

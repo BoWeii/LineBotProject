@@ -48,8 +48,10 @@ func UpdateParkingInfo(ctx context.Context, m PubSubMessage) error {
 	//以roadID產生entity key
 	for _, cell := range NTPC.Cells {
 
-		roadKey := datastore.NameKey("NTPCParkings", strconv.Itoa(cell.ID), nil)
+		parentKey := datastore.NameKey("NTPCRoadName", cell.RoadID, nil)
+		roadKey := datastore.NameKey("NTPCParkings", strconv.Itoa(cell.ID), parentKey)
 		roadKeys = append(roadKeys, roadKey)
+
 	}
 
 	putParkingInfo(ctx, roadKeys, &NTPC)

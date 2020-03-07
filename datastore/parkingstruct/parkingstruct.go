@@ -44,7 +44,7 @@ type cellNTPC struct {
 	PayCash       string  `json:"PAYCASH"`              //費率
 	Memo          string  `json:"MEMO"`                 //車格備註
 	RoadID        string  `json:"ROADID"`               //路段代碼
-	CellStaus     bool    `json:"CELLSTATUS,string"`    //車格狀態判斷 Y有車 N空位
+	CellStatus    bool    `json:"CELLSTATUS,string"`    //車格狀態判斷 Y有車 N空位
 	IsNowCash     bool    `json:"ISNOWCASH,string"`     //收費時段判斷
 	ParkingStatus int     `json:"ParkingStatus,string"` //車格狀態 　1：有車、2：空位、3：非收費時段、4：時段性禁停、5：施工（民眾申請施工租用車格時使用）
 	Lat           float64 `json:"lat,string"`           //緯度

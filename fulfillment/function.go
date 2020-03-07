@@ -3,14 +3,18 @@ package fulfillment
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
+	"sort"
 	"strconv"
 
 	"cloud.google.com/go/datastore"
 	dialogflow "cloud.google.com/go/dialogflow/apiv2"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/line/line-bot-sdk-go/linebot"
+	"github.com/thedevsaddam/gojsonq"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
@@ -19,16 +23,20 @@ import (
 )
 
 //road 路段停車格
-type road struct {
-	RoadSegAvail    string `json:"roadSegAvail"`    //路段剩餘格位數
-	RoadSegFee      string `json:"roadSegFee"`      //收費標準
-	RoadSegID       string `json:"roadSegID"`       //路段ID
-	RoadSegName     string `json:"roadSegName"`     //路段名稱
-	RoadSegTmEnd    string `json:"roadSegTmEnd"`    //收費結束時間
-	RoadSegTmStart  string `json:"roadSegTmStart"`  //收費開始時間
-	RoadSegTotal    string `json:"roadSegTotal"`    //路段總格位數
-	RoadSegUpdateTm string `json:"roadSegUpdateTm"` //資料更新時間
-	RoadSegUsage    string `json:"roadSegUsage"`    //路段使用率
+type parking struct {
+	ID            int     //車格序號
+	Name          string  //車格類型
+	Day           string  //收費天
+	Hour          string  //收費時段
+	Pay           string  //收費形式
+	PayCash       string  //費率
+	Memo          string  //車格備註
+	RoadID        string  //路段代碼
+	CellStatus    bool    //車格狀態判斷 Y有車 N空位
+	IsNowCash     bool    //收費時段判斷
+	ParkingStatus int     //車格狀態 　1：有車、2：空位、3：非收費時段、4：時段性禁停、5：施工（民眾申請施工租用車格時使用）
+	Lat           float64 //緯度
+	Lon           float64 //經度
 }
 
 // dialogflowProcessor has all the information for connecting with Dialogflow
@@ -50,9 +58,10 @@ type datastoreProcessor struct {
 
 // nlpResponse is webhook回應
 type nlpResponse struct {
-	Intent     string            `json:"intent"`
-	Confidence float32           `json:"confidence"`
-	Entities   map[string]string `json:"entities"`
+	Intent     string
+	Confidence float32
+	Entities   map[string]string
+	Prompts    string
 }
 
 const projectID string = "parkingproject-261207"
@@ -68,11 +77,56 @@ type response struct {
 	FulfillmentText string `json:"fulfillmentText"`
 }
 
+// Pair A data structure to hold a key/value pair.
+type Pair struct {
+	Key   string
+	Value float64
+}
+
+// PairList A slice of Pairs that implements sort.Interface to sort by Value.
+type PairList []Pair
+
+func (p PairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p PairList) Len() int           { return len(p) }
+func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
+
+// A function to turn a map into a PairList, then sort and return it.
+func sortMapByValue(m map[string][4]float64) PairList {
+	p := make(PairList, len(m))
+	i := 0
+	for k, v := range m {
+		p[i] = Pair{k, v[0]}
+		i++
+	}
+	sort.Sort(p)
+	return p
+}
+
 // init 初始化權限
 func init() {
 	bot, err = linebot.New("57cc60c3fc1530cc32ba896e1c4b7856", "GiKIwKk+Lwku0WeGEGnlEDBDDGC67tQVCSIMbcQaKpA2IyZPU6OgVSIdI0h1HUUG2Ky/psNLEEkjfnEZGITnJolxlEScGgLoWT/iKpwyinf/IJDgeB5gnIB0zmuag0vYlcs7WgOYdUg0CwbGXlWKIwdB04t89/1O/w1cDnyilFU=")
 	dialogflowProc.init(projectID, "parkingproject-261207-2933e4112308.json", "zh-TW", "Asia/Hong_Kong")
 	datastoreProc.init(projectID)
+
+}
+
+func replyUser(resp interface{}, event *linebot.Event) {
+	switch resp.(type) {
+	case string:
+		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(resp.(string))).Do(); err != nil {
+			log.Print(err)
+		}
+	case [5][4]interface{}:
+		container := carouselmessage.Carouselmesage(resp.([5][4]interface{}))
+		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewFlexMessage("車位資訊。", container)).Do(); err != nil {
+			log.Print(err)
+		}
+	}
+	//var roads []map[string]string
+	// roads = append(roads, map[string]string{"roadName": "五權路", "roadAvail": "10"})
+	//linebot.NewFlexMessage("車位資訊。", container),
+
+	//container := carouselmessage.Carouselmesage(roads)
 
 }
 
@@ -95,7 +149,7 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 	}
 
-	var respText string
+	var resp interface{}
 	//可能不只一位使用者傳送訊息
 	for _, event := range events {
 		//訊息事件 https://developers.line.biz/en/reference/messaging-api/#common-properties
@@ -106,29 +160,30 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 				response := dialogflowProc.processNLP(message.Text, "testUser")
 
 				if response.Intent == "FindParking" {
-					respText = getData(response.Entities["RoadName"], response.Intent)
+					if _, ok := response.Entities["location"]; ok {
+						lat, lon := getGPS(response.Entities["location"])
+						resp = getData(lat, lon)
+
+					} else {
+						resp = response.Prompts
+					}
 				} else {
-					respText = "我聽不太懂"
+					resp = "我聽不太懂"
 				}
 
 			case *linebot.ImageMessage:
 				fmt.Print("image")
 			case *linebot.LocationMessage:
-				fmt.Print("location:", message.Address)
+				fmt.Printf("gps %f,%f\n", message.Latitude, message.Longitude)
+
+				resp = getData(message.Latitude, message.Longitude)
 			}
 			//追隨事件
 		} else if event.Type == linebot.EventTypeFollow {
-			respText = "還敢加我好友啊"
+			resp = "還敢加我好友啊"
 		}
 
-		fmt.Print(respText)
-		var roads []map[string]string
-		roads = append(roads, map[string]string{"roadName": "五權路", "roadAvail": "10"})
-		roads = append(roads, map[string]string{"roadName": "忠孝東路", "roadAvail": "50"})
-		container := carouselmessage.Carouselmesage(roads)
-		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewFlexMessage("車位資訊。", container)).Do(); err != nil {
-			log.Print(err)
-		}
+		replyUser(resp, event)
 	}
 }
 
@@ -194,7 +249,11 @@ func (dp *dialogflowProcessor) processNLP(rawMessage string, username string) (r
 		for paramName, entity := range params {
 			extractedValue := extractDialogflowEntities(entity)
 			log.Printf("paramName= %s, entity= %s\n", paramName, extractedValue)
-			r.Entities[paramName] = extractedValue
+			if extractedValue != "" {
+				r.Entities[paramName] = extractedValue
+			} else {
+				r.Prompts = queryResult.GetFulfillmentText()
+			}
 		}
 	}
 	return
@@ -214,12 +273,14 @@ func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 	case *structpb.Value_StructValue:
 		s := p.GetStructValue()
 		fields := s.GetFields()
-		extractedEntity = ""
-		for key, value := range fields {
-			log.Printf("key: %s, value: %s", key, value)
-			// @TODO: Other entity types can be added here
-		}
+
+		// for key, value := range fields {
+		// 	log.Printf("key: %s, value: %s", key, value)
+		// 	// @TODO: Other entity types can be added here
+		// }
+		extractedEntity := fields["street-address"].GetStringValue()
 		return extractedEntity
+
 	case *structpb.Value_ListValue:
 		list := p.GetListValue()
 		if len(list.GetValues()) > 1 {
@@ -232,38 +293,117 @@ func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 	}
 }
 
-// getData  找車位資料
-func getData(roadName string, intent string) (data string) {
-	if roadName == "" {
-		data = "哪一條路上的車位呢?"
-		return
+func getDist(userLat float64, userLon float64, lat float64, lon float64) (dist float64) {
+	dist = math.Abs(userLat-lat) + math.Abs(userLon-lon)
+	return
+}
+
+func getGPS(roadName string) (lat float64, lon float64) {
+
+	geocoding := "https://maps.googleapis.com/maps/api/geocode/json?address=" + roadName + "&key=AIzaSyAhsij-kCTyOzK9Vq83zemmxJXTdNJVkV8"
+	resp, _ := http.Get(geocoding)
+	body, _ := ioutil.ReadAll(resp.Body)
+	jq := gojsonq.New().FromString(string(body))
+	res := jq.Find("results.[0].geometry.location")
+	gps := res.(map[string]interface{})
+	lat = gps["lat"].(float64)
+	lon = gps["lng"].(float64)
+	return
+}
+
+// getData  找車位資料-`-`
+func getData(lat float64, lon float64) (parkings [5][4]interface{}) {
+
+	/*查詢各路段 ID*/
+	// query := datastore.NewQuery("NTPCParkings").
+	// 	Project("RoadID").
+	// 	DistinctOn("RoadID").
+	// 	Order("RoadID")
+	// id := []string{}
+
+	//datastore 查詢剩餘車位
+
+	list := make(map[string][4]float64)
+
+	//var parkings []parking
+	for _, i := range []int{2, 3} {
+		query := datastore.NewQuery("NTPCParkings").
+			Filter("CellStatus =", false).
+			Filter("ParkingStatus =", i)
+
+		it := datastoreProc.client.Run(datastoreProc.ctx, query)
+
+		for {
+			var parking parking
+			_, err := it.Next(&parking)
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Error fetching road: %v", err)
+			}
+			//fmt.Printf("RoadID %s\n", parking.RoadID)
+
+			if dist1, ok := list[parking.RoadID]; ok {
+				dist2 := getDist(lat, lon, parking.Lat, parking.Lon)
+				if dist2 < dist1[0] {
+					info := [4]float64{dist2, parking.Lat, parking.Lon, list[parking.RoadID][3] + 1}
+					list[parking.RoadID] = info
+				}
+
+			} else {
+				dist := getDist(lat, lon, parking.Lat, parking.Lon)
+				info := [4]float64{dist, parking.Lat, parking.Lon, 1}
+				list[parking.RoadID] = info
+
+			}
+
+			//parkings = append(parkings, parking)
+			//id = append(id, road.RoadID)
+		}
 	}
 
-	// ctx := context.Background()
-	// projectID := "parkingproject-261207"
-	// client, err := datastore.NewClient(ctx, projectID)
-	// if err != nil {
-	// 	log.Fatalf("Failed to create client: %v", err)
+	for i, v := range sortMapByValue(list)[:5] {
+		fmt.Printf("%s %f,%f %d\n", v.Key, list[v.Key][1], list[v.Key][2], int(list[v.Key][3]))
+		parkings[i] = [4]interface{}{v.Key, list[v.Key][1], list[v.Key][2], int(list[v.Key][3])}
+
+	}
+
+	return
+
+	/*查詢各路段 ID*/
+	// for _, i := range id {
+
+	// 	query = datastore.NewQuery("NTPCParkings").
+	// 		Filter("RoadID =", i).
+	// 		Order("RoadID").
+	// 		Limit(1)
+
+	// 	it = datastoreProc.client.Run(datastoreProc.ctx, query)
+	// 	for {
+	// 		var road road
+	// 		_, err := it.Next(&road)
+	// 		if err == iterator.Done {
+	// 			break
+	// 		}
+	// 		if err != nil {
+	// 			log.Fatalf("Error fetching road: %v", err)
+	// 		}
+
+	/*geocoding gps 轉路名*/
+
+	// 		fmt.Printf("RoadID %s ,%f ,%f ", road.RoadID, road.Lat, road.Lon)
+	// 		geo := "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + fmt.Sprintf("%f", road.Lat) + "," + fmt.Sprintf("%f", road.Lon) + "&result_type=route&language=zh-tw&key=AIzaSyAhsij-kCTyOzK9Vq83zemmxJXTdNJVkV8"
+	// 		resp, _ := http.Get(geo)
+	// 		body, _ := ioutil.ReadAll(resp.Body)
+	// 		jq := gojsonq.New().FromString(string(body))
+	// 		res := jq.From("results.[0].address_components").Where("types.[0]", "=", "route").Get()
+	// 		fmt.Println(res.([]interface{})[0].(map[string]interface{})["long_name"].(string))
+
+	// 	}
+
 	// }
 
-	// log.Printf("roadName: %s", roadName)
-
-	//datastore 查詢路段資料
-	query := datastore.NewQuery("Parkings").Filter("RoadSegName=", roadName)
-	it := datastoreProc.client.Run(datastoreProc.ctx, query)
-	for {
-		var road road
-		_, err := it.Next(&road)
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			log.Fatalf("Error fetching road: %v", err)
-		}
-		fmt.Printf("RoadName %s, RoadSegAvail %s\n", road.RoadSegName, road.RoadSegAvail)
-
-		data = road.RoadSegName + "有 " + road.RoadSegAvail + " 個車位"
-	}
 	return
 
 }
