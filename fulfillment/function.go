@@ -90,15 +90,15 @@ func (p PairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 func (p PairList) Len() int           { return len(p) }
 func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
 
-// A function to turn a map into a PairList, then sort and return it.
-func sortMapByValue(m map[string][4]float64) PairList {
+// sortMapByValue 排序 map
+func sortMapByValue(m map[string][]float64) PairList {
 	p := make(PairList, len(m))
 	i := 0
 	for k, v := range m {
-		p[i] = Pair{k, v[0]}
+		p[i] = Pair{k, v[0]} //k=roadID v=distance
 		i++
 	}
-	sort.Sort(p)
+	sort.Sort(p) //開始排序 詳見:https://books.studygolang.com/The-Golang-Standard-Library-by-Example/chapter03/03.1.html
 	return p
 }
 
@@ -111,13 +111,13 @@ func init() {
 }
 
 func replyUser(resp interface{}, event *linebot.Event) {
-	switch resp.(type) {
+	switch resp.(type) { //確認是何種類型訊息
 	case string:
 		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(resp.(string))).Do(); err != nil {
 			log.Print(err)
 		}
 	case [5][4]interface{}:
-		container := carouselmessage.Carouselmesage(resp.([5][4]interface{}))
+		container := carouselmessage.Carouselmesage(resp.([5][4]interface{})) //建立Carouselmesage
 		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewFlexMessage("車位資訊。", container)).Do(); err != nil {
 			log.Print(err)
 		}
@@ -149,41 +149,39 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 	}
 
-	var resp interface{}
+	var resp interface{} //回傳的訊息，可能為text、Carouselmesage，故用interface
+
 	//可能不只一位使用者傳送訊息
 	for _, event := range events {
 		//訊息事件 https://developers.line.biz/en/reference/messaging-api/#common-properties
 		if event.Type == linebot.EventTypeMessage {
 			//訊息種類
 			switch message := event.Message.(type) {
-			case *linebot.TextMessage:
-				response := dialogflowProc.processNLP(message.Text, "testUser")
+			case *linebot.TextMessage: //文字訊息
+				response := dialogflowProc.processNLP(message.Text, "testUser") //解析使用者所傳文字
 
 				if response.Intent == "FindParking" {
 					if _, ok := response.Entities["location"]; ok {
-						lat, lon := getGPS(response.Entities["location"])
-						resp = getData(lat, lon)
+						lat, lon := getGPS(response.Entities["location"]) //路名轉GPS
+						resp = getData(lat, lon)                          //查詢車格資訊
 
 					} else {
-						resp = response.Prompts
+						resp = response.Prompts //如果偵測到intent卻沒有entity，回傳提示輸入訊息
 					}
 				} else {
 					resp = "我聽不太懂"
 				}
-
-			case *linebot.ImageMessage:
-				fmt.Print("image")
-			case *linebot.LocationMessage:
+			case *linebot.LocationMessage: //位置訊息
 				fmt.Printf("gps %f,%f\n", message.Latitude, message.Longitude)
 
-				resp = getData(message.Latitude, message.Longitude)
+				resp = getData(message.Latitude, message.Longitude) //查詢車格資訊
 			}
-			//追隨事件
+			//加好友事件
 		} else if event.Type == linebot.EventTypeFollow {
 			resp = "還敢加我好友啊"
 		}
 
-		replyUser(resp, event)
+		replyUser(resp, event) //回復使用者訊息
 	}
 }
 
@@ -247,12 +245,12 @@ func (dp *dialogflowProcessor) processNLP(rawMessage string, username string) (r
 	params := queryResult.Parameters.GetFields()
 	if len(params) > 0 {
 		for paramName, entity := range params {
-			extractedValue := extractDialogflowEntities(entity)
+			extractedValue := extractDialogflowEntities(entity) //解析entities type
 			log.Printf("paramName= %s, entity= %s\n", paramName, extractedValue)
 			if extractedValue != "" {
 				r.Entities[paramName] = extractedValue
 			} else {
-				r.Prompts = queryResult.GetFulfillmentText()
+				r.Prompts = queryResult.GetFulfillmentText() //因entity為必要參數，若為空則取得prompts提示文字
 			}
 		}
 	}
@@ -270,7 +268,7 @@ func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 		return strconv.FormatFloat(p.GetNumberValue(), 'f', 6, 64)
 	case *structpb.Value_BoolValue:
 		return strconv.FormatBool(p.GetBoolValue())
-	case *structpb.Value_StructValue:
+	case *structpb.Value_StructValue: //sys.location 為內建entity，回傳格式為struct，可以在dialogflow上輸入測試地址看完整結構
 		s := p.GetStructValue()
 		fields := s.GetFields()
 
@@ -278,7 +276,7 @@ func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 		// 	log.Printf("key: %s, value: %s", key, value)
 		// 	// @TODO: Other entity types can be added here
 		// }
-		extractedEntity := fields["street-address"].GetStringValue()
+		extractedEntity := fields["street-address"].GetStringValue() //取得地址這欄
 		return extractedEntity
 
 	case *structpb.Value_ListValue:
@@ -303,9 +301,9 @@ func getGPS(roadName string) (lat float64, lon float64) {
 	geocoding := "https://maps.googleapis.com/maps/api/geocode/json?address=" + roadName + "&key=AIzaSyAhsij-kCTyOzK9Vq83zemmxJXTdNJVkV8"
 	resp, _ := http.Get(geocoding)
 	body, _ := ioutil.ReadAll(resp.Body)
-	jq := gojsonq.New().FromString(string(body))
-	res := jq.Find("results.[0].geometry.location")
-	gps := res.(map[string]interface{})
+	jq := gojsonq.New().FromString(string(body))    //gojsonq解析json
+	res := jq.Find("results.[0].geometry.location") //可以直接點網址了解json結構
+	gps := res.(map[string]interface{})             //interface型態轉回map
 	lat = gps["lat"].(float64)
 	lon = gps["lng"].(float64)
 	return
@@ -323,37 +321,40 @@ func getData(lat float64, lon float64) (parkings [5][4]interface{}) {
 
 	//datastore 查詢剩餘車位
 
-	list := make(map[string][4]float64)
+	list := make(map[string][]float64) //儲存各路段離使用者最近且為空位的車格(一個路段一個) ex:[RoadID][distance,lat,lon,剩餘數量]
 
 	//var parkings []parking
-	for _, i := range []int{2, 3} {
+	for _, i := range []int{2, 3} { //2為空位,3為非收費時段,datastore查詢沒有or的方法，所以須查詢兩次
 		query := datastore.NewQuery("NTPCParkings").
-			Filter("CellStatus =", false).
+			Filter("CellStatus =", false). //false代表沒有車，但必須確認ParkingStatus必須為2或3才可停
 			Filter("ParkingStatus =", i)
 
 		it := datastoreProc.client.Run(datastoreProc.ctx, query)
 
 		for {
 			var parking parking
-			_, err := it.Next(&parking)
+			_, err := it.Next(&parking) //查詢後的結果一一迭代儲存到車格的struct
+
 			if err == iterator.Done {
 				break
-			}
-			if err != nil {
+			} else if err != nil {
 				log.Fatalf("Error fetching road: %v", err)
 			}
 			//fmt.Printf("RoadID %s\n", parking.RoadID)
 
-			if dist1, ok := list[parking.RoadID]; ok {
-				dist2 := getDist(lat, lon, parking.Lat, parking.Lon)
-				if dist2 < dist1[0] {
-					info := [4]float64{dist2, parking.Lat, parking.Lon, list[parking.RoadID][3] + 1}
+			if dist1, ok := list[parking.RoadID]; ok { //確認車格是否已在list內，有則比較直線距離，無則直接儲存
+
+				dist2 := getDist(lat, lon, parking.Lat, parking.Lon) //計算距離
+				if dist2 < dist1[0] {                                //比較同路段車格距離，若距離較小，則復寫到list
+					info := []float64{dist2, parking.Lat, parking.Lon, list[parking.RoadID][3] + 1}
 					list[parking.RoadID] = info
+				} else {
+					list[parking.RoadID][3]++
 				}
 
 			} else {
 				dist := getDist(lat, lon, parking.Lat, parking.Lon)
-				info := [4]float64{dist, parking.Lat, parking.Lon, 1}
+				info := []float64{dist, parking.Lat, parking.Lon, 1}
 				list[parking.RoadID] = info
 
 			}
@@ -363,9 +364,9 @@ func getData(lat float64, lon float64) (parkings [5][4]interface{}) {
 		}
 	}
 
-	for i, v := range sortMapByValue(list)[:5] {
+	for i, v := range sortMapByValue(list)[:5] { //依照距離排序路段車格，並取前五
 		fmt.Printf("%s %f,%f %d\n", v.Key, list[v.Key][1], list[v.Key][2], int(list[v.Key][3]))
-		parkings[i] = [4]interface{}{v.Key, list[v.Key][1], list[v.Key][2], int(list[v.Key][3])}
+		parkings[i] = [4]interface{}{v.Key, list[v.Key][1], list[v.Key][2], int(list[v.Key][3])} //儲存距離前五近車格，並回傳
 
 	}
 
@@ -403,7 +404,5 @@ func getData(lat float64, lon float64) (parkings [5][4]interface{}) {
 	// 	}
 
 	// }
-
-	return
 
 }
