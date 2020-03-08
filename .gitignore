@@ -3,3 +3,4 @@ bin/
 .vscode/
 fulfillment/ngrok.exe
 datastore/test/__debug_bin
+fulfillment/test/__debug_bin
