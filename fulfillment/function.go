@@ -158,8 +158,8 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 			//訊息種類
 			switch message := event.Message.(type) {
 			case *linebot.TextMessage: //文字訊息
-				response := dialogflowProc.processNLP(message.Text, "testUser") //解析使用者所傳文字
-
+				log.Println("UserID", event.Source.UserID)
+				response := dialogflowProc.processNLP(message.Text, event.Source.UserID) //解析使用者所傳文字
 				if response.Intent == "FindParking" {
 					if _, ok := response.Entities["location"]; ok {
 						lat, lon := getGPS(response.Entities["location"]) //路名轉GPS

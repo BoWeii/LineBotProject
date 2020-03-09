@@ -139,7 +139,7 @@ func getParkingInfo(url string) (*string, error) {
 	return &data, nil
 }
 
-//gcloud functions deploy putParkingInfo --source https://source.developers.google.com/projects/parkingproject-261207/repos/github_wei02427_linebotproject/moveable-aliases/master/paths/datastore --runtime=go113 --trigger-topic=updateInfo
+//gcloud functions deploy PutParkingInfo --source https://source.developers.google.com/projects/parkingproject-261207/repos/github_wei02427_linebotproject/moveable-aliases/master/paths/datastore --runtime=go113 --trigger-topic=updateInfo
 
 /*單一車格資訊，因缺少座標故先不用*/
 
