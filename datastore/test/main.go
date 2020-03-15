@@ -4,11 +4,11 @@ import (
 	"context"
 
 	linebotProject "project.com/datastore"
-
 )
 
 //main 測試function執行
 func main() {
+	// linebotProject.A(context.Background())
 	linebotProject.UpdateParkingInfo(context.Background(), linebotProject.PubSubMessage{Data: []byte("update")})
 }
 

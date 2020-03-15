@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"bufio"
 	"compress/gzip"
 	"context"
 	"encoding/json"
@@ -9,13 +10,13 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	"cloud.google.com/go/datastore"
 	xml2json "github.com/basgys/goxml2json"
 	parking "project.com/datastore/parkingstruct"
-
 )
 
 const projectID string = "parkingproject-261207"
@@ -36,7 +37,7 @@ func UpdateParkingInfo(ctx context.Context, m PubSubMessage) error {
 	if err != nil {
 		log.Print(err)
 	}
-	
+
 	var NTPC parking.NTPC
 	roadKeys := []*datastore.Key{}
 
@@ -53,7 +54,7 @@ func UpdateParkingInfo(ctx context.Context, m PubSubMessage) error {
 		roadKeys = append(roadKeys, roadKey)
 
 	}
-
+	log.Print(&NTPC)
 	putParkingInfo(ctx, roadKeys, &NTPC)
 
 	return nil
@@ -66,6 +67,7 @@ func putParkingInfo(ctx context.Context, roadKeys []*datastore.Key, parkings int
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
+	fmt.Print(parkings.(*parking.NTPC))
 
 	var tmp = 0
 	n := math.Ceil(float64(len(roadKeys)) / 500) //一次最多put500筆
@@ -159,3 +161,80 @@ func getParkingInfo(url string) (*string, error) {
 // 		}
 // 	}
 // }
+
+type ID2Name struct {
+	RoadID   string
+	RoadName string
+}
+type TTT struct {
+	IDs []*ID2Name
+}
+
+//a consumes a Pub/Sub message 並更新停車位資訊
+func A(ctx context.Context) error {
+
+	var datas TTT
+	roadKeys := []*datastore.Key{}
+
+	file, err := os.Open("data.txt")
+
+	if err != nil {
+		log.Fatalf("failed opening file: %s", err)
+	}
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	var txtlines []string
+
+	for scanner.Scan() {
+		txtlines = append(txtlines, scanner.Text())
+	}
+
+	file.Close()
+
+	for _, eachline := range txtlines {
+		dataSlice := strings.Split(eachline, " ")
+		var a ID2Name
+		a.RoadID = dataSlice[1]
+		a.RoadName = dataSlice[4]
+		// log.Print(a.RoadID, a.RoadName)
+		datas.IDs = append(datas.IDs, &a)
+	}
+
+	//以roadID產生entity key
+	for _, ID := range datas.IDs {
+		roadKey := datastore.NameKey("RoadIDToName", ID.RoadID, nil)
+		roadKeys = append(roadKeys, roadKey)
+
+	}
+	fmt.Print(datas)
+	B(ctx, roadKeys, &datas)
+
+	return nil
+}
+
+//put路段資訊
+func B(ctx context.Context, roadKeys []*datastore.Key, datas interface{}) {
+	// fmt.Print("@@@", datas)
+	client, err := datastore.NewClient(ctx, projectID)
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+	}
+
+	// var tmp = 0
+	// n := math.Ceil(float64(len(roadKeys)) / 500) //一次最多put500筆
+
+	// for i := 1; i <= int(n); i++ {
+	// 	var size int
+	// 	if size = len(roadKeys); i*500 < len(roadKeys) {
+	// 		size = i * 500
+	// 	}
+
+	// 	tmp = size - 1
+	// }
+	if _, err := client.PutMulti(ctx, roadKeys[0:], datas.(*TTT).IDs[0:]); err != nil {
+		log.Fatalf("PutMulti ID: %v", err)
+	}
+	fmt.Printf("Info Saved sucess")
+
+}
