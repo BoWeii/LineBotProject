@@ -19,7 +19,6 @@ import (
 	"google.golang.org/api/option"
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 	"project.com/fulfillment/carouselmessage"
-
 )
 
 //road 路段停車格
@@ -37,6 +36,7 @@ type parking struct {
 	ParkingStatus int     //車格狀態 　1：有車、2：空位、3：非收費時段、4：時段性禁停、5：施工（民眾申請施工租用車格時使用）
 	Lat           float64 //緯度
 	Lon           float64 //經度
+	Distance      string  //距離
 }
 
 // dialogflowProcessor has all the information for connecting with Dialogflow
@@ -116,8 +116,8 @@ func replyUser(resp interface{}, event *linebot.Event) {
 		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(resp.(string))).Do(); err != nil {
 			log.Print(err)
 		}
-	case [5][4]interface{}:
-		container := carouselmessage.Carouselmesage(resp.([5][4]interface{})) //建立Carouselmesage
+	case [5][5]interface{}:
+		container := carouselmessage.Carouselmesage(resp.([5][5]interface{})) //建立Carouselmesage
 		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewFlexMessage("車位資訊。", container)).Do(); err != nil {
 			log.Print(err)
 		}
@@ -162,6 +162,7 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 				response := dialogflowProc.processNLP(message.Text, event.Source.UserID) //解析使用者所傳文字
 				if response.Intent == "FindParking" {
 					if _, ok := response.Entities["location"]; ok {
+						log.Printf("@@@@@@@@", response.Entities["location"])
 						lat, lon := getGPS(response.Entities["location"]) //路名轉GPS
 						resp = getData(lat, lon)                          //查詢車格資訊
 
@@ -291,8 +292,31 @@ func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 	}
 }
 
+func FloatToString(input_num float64) string {
+	// to convert a float number to a string
+	return strconv.FormatFloat(input_num, 'f', 6, 64)
+}
+
 func getDist(userLat float64, userLon float64, lat float64, lon float64) (dist float64) {
 	dist = math.Abs(userLat-lat) + math.Abs(userLon-lon)
+	return
+}
+
+func getDistText(userLat float64, userLon float64, lat float64, lon float64) (distText string) {
+	origins := FloatToString(userLat) + "," + FloatToString(userLon)
+	destinations := FloatToString(lat) + "," + FloatToString(lon)
+	// log.Printf("origins===",origins)
+	// log.Printf("destinations===",destinations)
+	url := "https://maps.googleapis.com/maps/api/distancematrix/json?origins=" + origins + "&destinations=" + destinations + "&key=AIzaSyAhsij-kCTyOzK9Vq83zemmxJXTdNJVkV8"
+	resp, _ := http.Get(url)
+	body, _ := ioutil.ReadAll(resp.Body)
+	jq := gojsonq.New().FromString(string(body)) //gojsonq解析json
+	res := jq.Find("rows.[0].elements.[0].distance")
+	dis := res.(map[string]interface{})
+	distText = dis["text"].(string)
+	// distValue = dis["value"].(float64)
+	log.Print("texttttt=", distText)
+	// log.Print("valueeeee=", distValue)
 	return
 }
 
@@ -310,7 +334,7 @@ func getGPS(roadName string) (lat float64, lon float64) {
 }
 
 // getData  找車位資料-`-`
-func getData(lat float64, lon float64) (parkings [5][4]interface{}) {
+func getData(lat float64, lon float64) (parkings [5][5]interface{}) {
 
 	/*查詢各路段 ID*/
 	// query := datastore.NewQuery("NTPCParkings").
@@ -365,8 +389,9 @@ func getData(lat float64, lon float64) (parkings [5][4]interface{}) {
 	}
 
 	for i, v := range sortMapByValue(list)[:5] { //依照距離排序路段車格，並取前五
-		fmt.Printf("%s %f,%f %d\n", v.Key, list[v.Key][1], list[v.Key][2], int(list[v.Key][3]))
-		parkings[i] = [4]interface{}{v.Key, list[v.Key][1], list[v.Key][2], int(list[v.Key][3])} //儲存距離前五近車格，並回傳
+		text:=getDistText(lat, lon, list[v.Key][1], list[v.Key][2])
+		fmt.Printf("%s %f,%f %d %s\n", v.Key, list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text)
+		parkings[i] = [5]interface{}{v.Key, list[v.Key][1], list[v.Key][2], int(list[v.Key][3]),text} //儲存距離前五近車格，並回傳
 
 	}
 

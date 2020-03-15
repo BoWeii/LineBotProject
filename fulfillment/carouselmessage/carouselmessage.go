@@ -8,7 +8,7 @@ import (
 
 )
 
-func bubbleContainer(roadName string, lat float64, lon float64, avail int, num int) (container *linebot.BubbleContainer) {
+func bubbleContainer(roadName string, lat float64, lon float64, avail int,dis string, num int) (container *linebot.BubbleContainer) {
 	container = &linebot.BubbleContainer{
 		Type: linebot.FlexContainerTypeBubble,
 		Header: &linebot.BoxComponent{
@@ -39,6 +39,10 @@ func bubbleContainer(roadName string, lat float64, lon float64, avail int, num i
 			Contents: []linebot.FlexComponent{
 				&linebot.TextComponent{
 					Type: linebot.FlexComponentTypeText,
+					Text: "距離" + dis,
+				},
+				&linebot.TextComponent{
+					Type: linebot.FlexComponentTypeText,
 					Text: "剩餘 " + strconv.Itoa(avail) + " 個",
 				},
 			},
@@ -64,11 +68,11 @@ func bubbleContainer(roadName string, lat float64, lon float64, avail int, num i
 }
 
 //Carouselmesage 產生訊息
-func Carouselmesage(roads [5][4]interface{}) (container *linebot.CarouselContainer) {
+func Carouselmesage(roads [5][5]interface{}) (container *linebot.CarouselContainer) {
 	var bubbleConts []*linebot.BubbleContainer
 
-	for i, info := range roads {
-		bubbleConts = append(bubbleConts, bubbleContainer(info[0].(string), info[1].(float64), info[2].(float64), info[3].(int), i+1))
+	for i,info := range roads {
+		bubbleConts = append(bubbleConts, bubbleContainer(info[0].(string), info[1].(float64), info[2].(float64), info[3].(int), info[4].(string),i))
 	}
 	container = &linebot.CarouselContainer{
 		Type:     linebot.FlexContainerTypeCarousel,

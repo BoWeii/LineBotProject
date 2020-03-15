@@ -36,7 +36,7 @@ func UpdateParkingInfo(ctx context.Context, m PubSubMessage) error {
 	if err != nil {
 		log.Print(err)
 	}
-
+	
 	var NTPC parking.NTPC
 	roadKeys := []*datastore.Key{}
 
