@@ -162,7 +162,7 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 				response := dialogflowProc.processNLP(message.Text, event.Source.UserID) //解析使用者所傳文字
 				if response.Intent == "FindParking" {
 					if _, ok := response.Entities["location"]; ok {
-						log.Printf("@@@@@@@@", response.Entities["location"])
+						// log.Printf("@@@@@@@@", response.Entities["location"])
 						lat, lon := getGPS(response.Entities["location"]) //路名轉GPS
 						resp = getData(lat, lon)                          //查詢車格資訊
 
@@ -315,7 +315,6 @@ func getDistText(userLat float64, userLon float64, lat float64, lon float64) (di
 	dis := res.(map[string]interface{})
 	distText = dis["text"].(string)
 	// distValue = dis["value"].(float64)
-	log.Print("texttttt=", distText)
 	// log.Print("valueeeee=", distValue)
 	return
 }
@@ -330,6 +329,32 @@ func getGPS(roadName string) (lat float64, lon float64) {
 	gps := res.(map[string]interface{})             //interface型態轉回map
 	lat = gps["lat"].(float64)
 	lon = gps["lng"].(float64)
+	return
+}
+
+type IDToName struct{
+	RoadID string
+	RoadName string
+}
+
+func ID2Name(id string)(name string){
+	
+	query := datastore.NewQuery("RoadIDToName").
+			Filter("RoadID =", id) //false代表沒有車，但必須確認ParkingStatus必須為2或3才可停
+	// it := datastoreProc.client.Run(datastoreProc.ctx, query)
+	fmt.Print("&&&&&&&&&&&&&&",query)
+	it := datastoreProc.client.Run(datastoreProc.ctx, query)
+	for {
+        var data IDToName
+        _, err := it.Next(&data)
+        if err == iterator.Done {
+                break
+        }
+        if err != nil {
+                log.Fatalf("Error fetching next task: %v", err)
+        }
+        name=data.RoadName
+}
 	return
 }
 
@@ -390,8 +415,8 @@ func getData(lat float64, lon float64) (parkings [5][5]interface{}) {
 
 	for i, v := range sortMapByValue(list)[:5] { //依照距離排序路段車格，並取前五
 		text:=getDistText(lat, lon, list[v.Key][1], list[v.Key][2])
-		fmt.Printf("%s %f,%f %d %s\n", v.Key, list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text)
-		parkings[i] = [5]interface{}{v.Key, list[v.Key][1], list[v.Key][2], int(list[v.Key][3]),text} //儲存距離前五近車格，並回傳
+		// fmt.Printf("%s %f,%f %d %s\n", ID2Name(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text)
+		parkings[i] = [5]interface{}{ID2Name(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]),text} //儲存距離前五近車格，並回傳
 
 	}
 

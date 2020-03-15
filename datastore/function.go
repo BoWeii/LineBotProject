@@ -170,7 +170,7 @@ type TTT struct {
 	IDs []*ID2Name
 }
 
-//a consumes a Pub/Sub message 並更新停車位資訊
+//a 
 func A(ctx context.Context) error {
 
 	var datas TTT
@@ -207,9 +207,7 @@ func A(ctx context.Context) error {
 		roadKeys = append(roadKeys, roadKey)
 
 	}
-	fmt.Print(datas)
 	B(ctx, roadKeys, &datas)
-
 	return nil
 }
 
@@ -220,18 +218,6 @@ func B(ctx context.Context, roadKeys []*datastore.Key, datas interface{}) {
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
-
-	// var tmp = 0
-	// n := math.Ceil(float64(len(roadKeys)) / 500) //一次最多put500筆
-
-	// for i := 1; i <= int(n); i++ {
-	// 	var size int
-	// 	if size = len(roadKeys); i*500 < len(roadKeys) {
-	// 		size = i * 500
-	// 	}
-
-	// 	tmp = size - 1
-	// }
 	if _, err := client.PutMulti(ctx, roadKeys[0:], datas.(*TTT).IDs[0:]); err != nil {
 		log.Fatalf("PutMulti ID: %v", err)
 	}
