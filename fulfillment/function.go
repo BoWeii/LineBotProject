@@ -292,9 +292,9 @@ func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 	}
 }
 
-func FloatToString(input_num float64) string {
+func floatToString(num float64) string {
 	// to convert a float number to a string
-	return strconv.FormatFloat(input_num, 'f', 6, 64)
+	return strconv.FormatFloat(num, 'f', 6, 64)
 }
 
 func getDist(userLat float64, userLon float64, lat float64, lon float64) (dist float64) {
@@ -303,8 +303,8 @@ func getDist(userLat float64, userLon float64, lat float64, lon float64) (dist f
 }
 
 func getDistText(userLat float64, userLon float64, lat float64, lon float64) (distText string) {
-	origins := FloatToString(userLat) + "," + FloatToString(userLon)
-	destinations := FloatToString(lat) + "," + FloatToString(lon)
+	origins := floatToString(userLat) + "," + floatToString(userLon)
+	destinations := floatToString(lat) + "," + floatToString(lon)
 	// log.Printf("origins===",origins)
 	// log.Printf("destinations===",destinations)
 	url := "https://maps.googleapis.com/maps/api/distancematrix/json?origins=" + origins + "&destinations=" + destinations + "&key=AIzaSyAhsij-kCTyOzK9Vq83zemmxJXTdNJVkV8"
@@ -332,29 +332,29 @@ func getGPS(roadName string) (lat float64, lon float64) {
 	return
 }
 
-type IDToName struct{
-	RoadID string
+type roadName struct {
+	RoadID   string
 	RoadName string
 }
 
-func ID2Name(id string)(name string){
-	
+func getRoadName(id string) (name string) {
+
 	query := datastore.NewQuery("RoadIDToName").
-			Filter("RoadID =", id) //false代表沒有車，但必須確認ParkingStatus必須為2或3才可停
+		Filter("RoadID =", id) //false代表沒有車，但必須確認ParkingStatus必須為2或3才可停
 	// it := datastoreProc.client.Run(datastoreProc.ctx, query)
-	fmt.Print("&&&&&&&&&&&&&&",query)
+	//fmt.Print("&&&&&&&&&&&&&&",query)
 	it := datastoreProc.client.Run(datastoreProc.ctx, query)
 	for {
-        var data IDToName
-        _, err := it.Next(&data)
-        if err == iterator.Done {
-                break
-        }
-        if err != nil {
-                log.Fatalf("Error fetching next task: %v", err)
-        }
-        name=data.RoadName
-}
+		var data roadName
+		_, err := it.Next(&data)
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			log.Fatalf("Error fetching next task: %v", err)
+		}
+		name = data.RoadName
+	}
 	return
 }
 
@@ -414,9 +414,9 @@ func getData(lat float64, lon float64) (parkings [5][5]interface{}) {
 	}
 
 	for i, v := range sortMapByValue(list)[:5] { //依照距離排序路段車格，並取前五
-		text:=getDistText(lat, lon, list[v.Key][1], list[v.Key][2])
+		text := getDistText(lat, lon, list[v.Key][1], list[v.Key][2])
 		// fmt.Printf("%s %f,%f %d %s\n", ID2Name(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text)
-		parkings[i] = [5]interface{}{ID2Name(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]),text} //儲存距離前五近車格，並回傳
+		parkings[i] = [5]interface{}{getRoadName(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text} //儲存距離前五近車格，並回傳
 
 	}
 

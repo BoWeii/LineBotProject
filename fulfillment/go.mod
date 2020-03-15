@@ -10,5 +10,5 @@ require (
 	github.com/thedevsaddam/gojsonq v2.3.0+incompatible
 	google.golang.org/api v0.15.0
 	google.golang.org/genproto v0.0.0-20191230161307-f3c370f40bfb
-	gopkg.in/thedevsaddam/gojsonq.v2 v2.3.0
+	gopkg.in/thedevsaddam/gojsonq.v2 v2.3.0 // indirect
 )
