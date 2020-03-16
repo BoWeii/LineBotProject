@@ -339,10 +339,8 @@ type roadName struct {
 
 func getRoadName(id string) (name string) {
 
-	query := datastore.NewQuery("RoadIDToName").
-		Filter("RoadID =", id) //false代表沒有車，但必須確認ParkingStatus必須為2或3才可停
-	// it := datastoreProc.client.Run(datastoreProc.ctx, query)
-	//fmt.Print("&&&&&&&&&&&&&&",query)
+	query := datastore.NewQuery("NTPCRoadName").
+		Filter("RoadID =", id)
 	it := datastoreProc.client.Run(datastoreProc.ctx, query)
 	for {
 		var data roadName
