@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"bufio"
 	"compress/gzip"
 	"context"
 	"encoding/json"
@@ -10,7 +9,6 @@ import (
 	"log"
 	"math"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -30,6 +28,7 @@ type PubSubMessage struct {
 func UpdateParkingInfo(ctx context.Context, m PubSubMessage) error {
 	log.Println(string(m.Data))
 	//取open data
+
 	//fileURL := "https://tcgbusfs.blob.core.windows.net/blobtcmsv/TCMSV_roadquery.gz"
 	//TPEParkingInfo, err := getParkingInfo(fileURL)
 	NTPCParkingInfo, err := getParkingInfo("https://data.ntpc.gov.tw/od/data/api/1A71BA9C-EF21-4524-B882-6D085DF2877A?$format=json")
@@ -54,7 +53,7 @@ func UpdateParkingInfo(ctx context.Context, m PubSubMessage) error {
 		roadKeys = append(roadKeys, roadKey)
 
 	}
-	log.Print(&NTPC)
+	//log.Print(&NTPC)
 	putParkingInfo(ctx, roadKeys, &NTPC)
 
 	return nil
@@ -67,7 +66,7 @@ func putParkingInfo(ctx context.Context, roadKeys []*datastore.Key, parkings int
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
-	fmt.Print(parkings.(*parking.NTPC))
+	//fmt.Print(parkings.(*parking.NTPC))
 
 	var tmp = 0
 	n := math.Ceil(float64(len(roadKeys)) / 500) //一次最多put500筆
@@ -162,65 +161,65 @@ func getParkingInfo(url string) (*string, error) {
 // 	}
 // }
 
-type ID2Name struct {
-	RoadID   string
-	RoadName string
-}
-type TTT struct {
-	IDs []*ID2Name
-}
+// type ID2Name struct {
+// 	RoadID   string
+// 	RoadName string
+// }
+// type TTT struct {
+// 	IDs []*ID2Name
+// }
 
-//a 
-func A(ctx context.Context) error {
+// //a
+// func A(ctx context.Context) error {
 
-	var datas TTT
-	roadKeys := []*datastore.Key{}
+// 	var datas TTT
+// 	roadKeys := []*datastore.Key{}
 
-	file, err := os.Open("data.txt")
+// 	file, err := os.Open("data.txt")
 
-	if err != nil {
-		log.Fatalf("failed opening file: %s", err)
-	}
+// 	if err != nil {
+// 		log.Fatalf("failed opening file: %s", err)
+// 	}
 
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	var txtlines []string
+// 	scanner := bufio.NewScanner(file)
+// 	scanner.Split(bufio.ScanLines)
+// 	var txtlines []string
 
-	for scanner.Scan() {
-		txtlines = append(txtlines, scanner.Text())
-	}
+// 	for scanner.Scan() {
+// 		txtlines = append(txtlines, scanner.Text())
+// 	}
 
-	file.Close()
+// 	file.Close()
 
-	for _, eachline := range txtlines {
-		dataSlice := strings.Split(eachline, " ")
-		var a ID2Name
-		a.RoadID = dataSlice[1]
-		a.RoadName = dataSlice[4]
-		// log.Print(a.RoadID, a.RoadName)
-		datas.IDs = append(datas.IDs, &a)
-	}
+// 	for _, eachline := range txtlines {
+// 		dataSlice := strings.Split(eachline, " ")
+// 		var a ID2Name
+// 		a.RoadID = dataSlice[1]
+// 		a.RoadName = dataSlice[4]
+// 		// log.Print(a.RoadID, a.RoadName)
+// 		datas.IDs = append(datas.IDs, &a)
+// 	}
 
-	//以roadID產生entity key
-	for _, ID := range datas.IDs {
-		roadKey := datastore.NameKey("RoadIDToName", ID.RoadID, nil)
-		roadKeys = append(roadKeys, roadKey)
+// 	//以roadID產生entity key
+// 	for _, ID := range datas.IDs {
+// 		roadKey := datastore.NameKey("NTPCRoadName", ID.RoadID, nil)
+// 		roadKeys = append(roadKeys, roadKey)
 
-	}
-	B(ctx, roadKeys, &datas)
-	return nil
-}
+// 	}
+// 	B(ctx, roadKeys, &datas)
+// 	return nil
+// }
 
-//put路段資訊
-func B(ctx context.Context, roadKeys []*datastore.Key, datas interface{}) {
-	// fmt.Print("@@@", datas)
-	client, err := datastore.NewClient(ctx, projectID)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-	}
-	if _, err := client.PutMulti(ctx, roadKeys[0:], datas.(*TTT).IDs[0:]); err != nil {
-		log.Fatalf("PutMulti ID: %v", err)
-	}
-	fmt.Printf("Info Saved sucess")
+// //put路段資訊
+// func B(ctx context.Context, roadKeys []*datastore.Key, datas interface{}) {
+// 	// fmt.Print("@@@", datas)
+// 	client, err := datastore.NewClient(ctx, projectID)
+// 	if err != nil {
+// 		log.Fatalf("Failed to create client: %v", err)
+// 	}
+// 	if _, err := client.PutMulti(ctx, roadKeys[0:], datas.(*TTT).IDs[0:]); err != nil {
+// 		log.Fatalf("PutMulti ID: %v", err)
+// 	}
+// 	fmt.Printf("Info Saved sucess")
 
-}
+// }
