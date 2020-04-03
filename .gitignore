@@ -2,5 +2,6 @@ pkg/
 bin/
 .vscode/
 fulfillment/ngrok.exe
+*.json
 datastore/test/__debug_bin
 fulfillment/test/__debug_bin
