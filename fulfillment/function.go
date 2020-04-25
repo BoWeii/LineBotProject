@@ -179,7 +179,7 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 			}
 			//加好友事件
 		} else if event.Type == linebot.EventTypeFollow {
-			resp = "還敢加我好友啊"
+			resp = "歡迎加我好友，本專案目前還在進行中，可以直接傳送GPS座標給我，我會告訴你附近的停車位！(目前僅供新北市)"
 		}
 
 		replyUser(resp, event) //回復使用者訊息
