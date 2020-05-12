@@ -111,9 +111,13 @@ func init() {
 }
 
 func replyUser(resp interface{}, event *linebot.Event) {
+	msg := linebot.NewTextMessage("告訴我你在哪兒？")
+	locaBtn := linebot.NewQuickReplyButton("", &linebot.LocationAction{Label: "點選定位"})
+	replyBtn := linebot.NewQuickReplyItems(locaBtn)
+	msg.WithQuickReplies(replyBtn)
 	switch resp.(type) { //確認是何種類型訊息
 	case string:
-		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(resp.(string))).Do(); err != nil {
+		if _, err = bot.ReplyMessage(event.ReplyToken, msg).Do(); err != nil {
 			log.Print(err)
 		}
 	case [5][5]interface{}:
