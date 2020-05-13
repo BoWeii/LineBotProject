@@ -8,7 +8,7 @@ import (
 
 )
 
-func bubbleContainer(roadName string, lat float64, lon float64, avail int,dis string, num int) (container *linebot.BubbleContainer) {
+func bubbleContainer(roadName string, lat float64, lon float64, avail int, dis string, num int, postBack string) (container *linebot.BubbleContainer) {
 	container = &linebot.BubbleContainer{
 		Type: linebot.FlexContainerTypeBubble,
 		Header: &linebot.BoxComponent{
@@ -49,30 +49,45 @@ func bubbleContainer(roadName string, lat float64, lon float64, avail int,dis st
 		},
 		Footer: &linebot.BoxComponent{
 			Type:   linebot.FlexComponentTypeBox,
-			Layout: linebot.FlexBoxLayoutTypeVertical,
+			Layout: linebot.FlexBoxLayoutTypeHorizontal,
 			Contents: []linebot.FlexComponent{
 				&linebot.ButtonComponent{
-					Type:  linebot.FlexComponentTypeButton,
-					Style: linebot.FlexButtonStyleTypeLink,
+					Type:   linebot.FlexComponentTypeButton,
+					Style:  linebot.FlexButtonStyleTypePrimary,
+					Color:  "#292b3b",
+					Height: linebot.FlexButtonHeightTypeSm,
+					Flex:   linebot.IntPtr(2),
 					Action: &linebot.URIAction{
 						Label: "導航",
 						URI:   "https://www.google.com/maps/search/?api=1&query=" + fmt.Sprintf("%f", lat) + "," + fmt.Sprintf("%f", lon),
 					},
 				},
+				&linebot.ButtonComponent{
+					Type:   linebot.FlexComponentTypeButton,
+					Style:  linebot.FlexButtonStyleTypeSecondary,
+					Color:  "#f5b800",
+					Height: linebot.FlexButtonHeightTypeSm,
+					Flex:   linebot.IntPtr(3),
+					Margin: linebot.FlexComponentMarginTypeXl,
+					Action: &linebot.PostbackAction{
+						Label: "加入最愛",
+						Data:  postBack,
+					},
+				},
 			},
 		},
-		Size: linebot.FlexBubbleSizeTypeNano,
+		Size: linebot.FlexBubbleSizeTypeKilo,
 	}
 
 	return
 }
 
 //Carouselmesage 產生訊息
-func Carouselmesage(roads [5][5]interface{}) (container *linebot.CarouselContainer) {
+func Carouselmesage(roads [5][6]interface{}) (container *linebot.CarouselContainer) {
 	var bubbleConts []*linebot.BubbleContainer
 
-	for i,info := range roads {
-		bubbleConts = append(bubbleConts, bubbleContainer(info[0].(string), info[1].(float64), info[2].(float64), info[3].(int), info[4].(string),i+1))
+	for i, info := range roads {
+		bubbleConts = append(bubbleConts, bubbleContainer(info[0].(string), info[1].(float64), info[2].(float64), info[3].(int), info[4].(string), i+1, "Action=add roadID="+info[5].(string)))
 	}
 	container = &linebot.CarouselContainer{
 		Type:     linebot.FlexContainerTypeCarousel,
@@ -80,3 +95,19 @@ func Carouselmesage(roads [5][5]interface{}) (container *linebot.CarouselContain
 	}
 	return
 }
+
+func FavorCarouselmesage(roads [][6]interface{}) (container *linebot.CarouselContainer) {
+	var bubbleConts []*linebot.BubbleContainer
+
+	for i, info := range roads {
+		fmt.Print(info)
+		bubbleConts = append(bubbleConts, bubbleContainer(info[0].(string), info[1].(float64), info[2].(float64), info[3].(int), info[4].(string), i+1, "Action=del roadID="+info[5].(string)))
+	}
+	container = &linebot.CarouselContainer{
+		Type:     linebot.FlexContainerTypeCarousel,
+		Contents: bubbleConts,
+	}
+	return
+}
+
+//"line://nv/location",

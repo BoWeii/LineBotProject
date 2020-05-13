@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 
 	"cloud.google.com/go/datastore"
 	dialogflow "cloud.google.com/go/dialogflow/apiv2"
@@ -19,6 +20,7 @@ import (
 	"google.golang.org/api/option"
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 	"project.com/fulfillment/carouselmessage"
+
 )
 
 //road 路段停車格
@@ -111,17 +113,20 @@ func init() {
 }
 
 func replyUser(resp interface{}, event *linebot.Event) {
-	msg := linebot.NewTextMessage("告訴我你在哪兒？")
-	locaBtn := linebot.NewQuickReplyButton("", &linebot.LocationAction{Label: "點選定位"})
-	replyBtn := linebot.NewQuickReplyItems(locaBtn)
-	msg.WithQuickReplies(replyBtn)
+
 	switch resp.(type) { //確認是何種類型訊息
 	case string:
-		if _, err = bot.ReplyMessage(event.ReplyToken, msg).Do(); err != nil {
+
+		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(resp.(string))).Do(); err != nil {
 			log.Print(err)
 		}
-	case [5][5]interface{}:
-		container := carouselmessage.Carouselmesage(resp.([5][5]interface{})) //建立Carouselmesage
+	case [][6]interface{}:
+		container := carouselmessage.FavorCarouselmesage(resp.([][6]interface{})) //建立Carouselmesage
+		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewFlexMessage("車位資訊。", container)).Do(); err != nil {
+			log.Print(err)
+		}
+	case [5][6]interface{}:
+		container := carouselmessage.Carouselmesage(resp.([5][6]interface{})) //建立Carouselmesage
 		if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewFlexMessage("車位資訊。", container)).Do(); err != nil {
 			log.Print(err)
 		}
@@ -162,8 +167,9 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 			//訊息種類
 			switch message := event.Message.(type) {
 			case *linebot.TextMessage: //文字訊息
-				log.Println("UserID", event.Source.UserID)
+
 				response := dialogflowProc.processNLP(message.Text, event.Source.UserID) //解析使用者所傳文字
+
 				if response.Intent == "FindParking" {
 					if _, ok := response.Entities["location"]; ok {
 						// log.Printf("@@@@@@@@", response.Entities["location"])
@@ -176,14 +182,34 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 				} else {
 					resp = "我聽不太懂"
 				}
+
 			case *linebot.LocationMessage: //位置訊息
 				fmt.Printf("gps %f,%f\n", message.Latitude, message.Longitude)
 
 				resp = getData(message.Latitude, message.Longitude) //查詢車格資訊
 			}
+
 			//加好友事件
 		} else if event.Type == linebot.EventTypeFollow {
 			resp = "歡迎加我好友，本專案目前還在進行中，可以直接傳送GPS座標給我，我會告訴你附近的停車位！(目前僅供新北市)"
+		} else if event.Type == linebot.EventTypePostback {
+			UserID := event.Source.UserID
+			datap := event.Postback.Data
+			log.Println("UserID", UserID, "  ", datap)
+
+			if datap == "favor" {
+				resp = getFavor(UserID)
+				switch resp.(type) {
+				case string:
+					resp = resp.(string)
+				case [][6]interface{}:
+					resp = resp.([][6]interface{})
+				}
+
+			} else {
+				resp = userFavorModify(UserID, datap)
+			}
+
 		}
 
 		replyUser(resp, event) //回復使用者訊息
@@ -361,7 +387,7 @@ func getRoadName(id string) (name string) {
 }
 
 // getData  找車位資料-`-`
-func getData(lat float64, lon float64) (parkings [5][5]interface{}) {
+func getData(lat float64, lon float64) (parkings [5][6]interface{}) {
 
 	/*查詢各路段 ID*/
 	// query := datastore.NewQuery("NTPCParkings").
@@ -418,7 +444,7 @@ func getData(lat float64, lon float64) (parkings [5][5]interface{}) {
 	for i, v := range sortMapByValue(list)[:5] { //依照距離排序路段車格，並取前五
 		text := getDistText(lat, lon, list[v.Key][1], list[v.Key][2])
 		// fmt.Printf("%s %f,%f %d %s\n", ID2Name(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text)
-		parkings[i] = [5]interface{}{getRoadName(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text} //儲存距離前五近車格，並回傳
+		parkings[i] = [6]interface{}{getRoadName(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text, v.Key} //儲存距離前五近車格，並回傳
 
 	}
 
@@ -457,4 +483,107 @@ func getData(lat float64, lon float64) (parkings [5][5]interface{}) {
 
 	// }
 
+}
+
+func unmarshalPostback(data string) map[string]string {
+	postBack := make(map[string]string)
+	tmp := strings.Split(data, " ")
+	action := strings.Split(tmp[0], "=")[1]
+	roadID := strings.Split(tmp[1], "=")[1]
+	postBack["action"] = action
+	postBack["roadID"] = roadID
+
+	return postBack
+}
+
+type road struct {
+	RoadID string
+}
+type userFavor struct {
+	RoadID []string
+}
+
+func userFavorModify(userID string, datap string) (resp string) {
+	key := datastore.NameKey("userFavor", userID, nil)
+	data := unmarshalPostback(datap)
+	query := datastore.NewQuery("userFavor").
+		Filter("__key__ =", key)
+
+	it := datastoreProc.client.Run(datastoreProc.ctx, query)
+	var favorRoads userFavor
+	for {
+
+		_, err := it.Next(&favorRoads) //查詢後的結果一一迭代儲存到車格的struct
+
+		if err == iterator.Done {
+			resp = "你還沒新增過"
+			break
+		} else if err != nil {
+			log.Fatalf("Error fetching road: %v", err)
+		}
+		//fmt.Printf("RoadID %s\n", parking.RoadID)
+	}
+
+	switch data["action"] {
+	case "add":
+		if _, res := findFavor(favorRoads.RoadID, data["roadID"]); res == false {
+			favorRoads.RoadID = append(favorRoads.RoadID, data["roadID"])
+			resp = "新增成功"
+		}
+	case "del":
+		if index, res := findFavor(favorRoads.RoadID, data["roadID"]); res == true {
+			favorRoads.RoadID = append(favorRoads.RoadID[:index], favorRoads.RoadID[index+1:]...)
+			resp = "移除成功"
+		}
+
+	}
+
+	//favor.roadID = [2]*road{r1, r2}
+
+	if _, err := datastoreProc.client.Put(datastoreProc.ctx, key, &favorRoads); err != nil {
+		log.Fatalf("Put err: %v", err)
+	}
+
+	return
+}
+
+func findFavor(slice []string, val string) (int, bool) {
+	for i, item := range slice {
+		if item == val {
+			return i, true
+		}
+	}
+	return -1, false
+}
+
+func getFavor(userID string) (resp [][6]interface{}) {
+	key := datastore.NameKey("userFavor", userID, nil)
+
+	query := datastore.NewQuery("userFavor").
+		Filter("__key__ =", key)
+
+	it := datastoreProc.client.Run(datastoreProc.ctx, query)
+	var favorRoads userFavor
+	for {
+
+		_, err := it.Next(&favorRoads) //查詢後的結果一一迭代儲存到車格的struct
+
+		if err == iterator.Done {
+			break
+		} else if err != nil {
+			log.Fatalf("Error fetching road: %v", err)
+		} else {
+
+			for _, v := range favorRoads.RoadID { //依照距離排序路段車格，並取前五
+
+				resp = append(resp, [6]interface{}{"馬路", 25.21962092662309, 121.64191901826112, 10, "500", v}) //儲存距離前五近車格，並回傳
+
+			}
+			break
+		}
+
+		//fmt.Printf("RoadID %s\n", parking.RoadID)
+	}
+
+	return
 }
