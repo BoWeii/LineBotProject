@@ -1,26 +1,24 @@
 package fulfillment
 
 import (
-	"context"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"math"
-	"net/http"
-	"sort"
-	"strconv"
-	"strings"
-
 	"cloud.google.com/go/datastore"
 	dialogflow "cloud.google.com/go/dialogflow/apiv2"
+	"context"
+	"fmt"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/line/line-bot-sdk-go/linebot"
 	"github.com/thedevsaddam/gojsonq"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
+	"io/ioutil"
+	"log"
+	"math"
+	"net/http"
 	"project.com/fulfillment/carouselmessage"
-
+	"sort"
+	"strconv"
+	"strings"
 )
 
 //road 路段停車格
@@ -85,8 +83,8 @@ type Pair struct {
 	Value float64
 }
 
-const  rangeLon float64=0.009 ;
-const  rangeLat float64=0.008  ;
+const rangeLon float64 = 0.009
+const rangeLat float64 = 0.008
 
 // PairList A slice of Pairs that implements sort.Interface to sort by Value.
 type PairList []Pair
@@ -175,10 +173,9 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 
 				if response.Intent == "FindParking" {
 					if _, ok := response.Entities["location"]; ok {
-						// log.Printf("@@@@@@@@", response.Entities["location"])
 						lat, lon := getGPS(response.Entities["location"]) //路名轉GPS
-						fmt.Printf("lat-->%f  lon__>%f\n",lat,lon);
-						resp = getData(lat, lon)                          //查詢車格資訊
+						resp = getData(lat, lon) //查詢車格資訊
+						fmt.Printf("^^^^^^^^^^^^^^^^^^^^",resp)
 
 					} else {
 						resp = response.Prompts //如果偵測到intent卻沒有entity，回傳提示輸入訊息
@@ -391,7 +388,7 @@ func getRoadName(id string) (name string) {
 }
 
 // getData  找車位資料-`-`
-func getData(lat float64, lon float64) (parkings [5][6]interface{}) {
+func getData(lat float64, lon float64) (interface{}) {
 
 	/*查詢各路段 ID*/
 	// query := datastore.NewQuery("NTPCParkings").
@@ -406,14 +403,12 @@ func getData(lat float64, lon float64) (parkings [5][6]interface{}) {
 
 	//var parkings []parking
 	for _, i := range []int{2, 3} { //2為空位,3為非收費時段,datastore查詢沒有or的方法，所以須查詢兩次
-		fmt.Printf("lat+rangeLat ==> %f\n",lat+rangeLat);
-		fmt.Printf("lat-rangeLat ==>%f\n",lat-rangeLat);
 		query := datastore.NewQuery("NTPCParkings").
 			Filter("CellStatus =", false). //false代表沒有車，但必須確認ParkingStatus必須為2或3才可停
 			Filter("ParkingStatus =", i).
-			Filter("Lat >",lat-rangeLat).Filter("Lat <",lat+rangeLat)
+			Filter("Lat >",lat-rangeLat).
+			Filter("Lat <",lat+rangeLat)
 			// Filter("Lat >=",lat-rangeWE).Filter("Lat <=",lat+rangeWE)
-
 
 		it := datastoreProc.client.Run(datastoreProc.ctx, query)
 
@@ -426,8 +421,10 @@ func getData(lat float64, lon float64) (parkings [5][6]interface{}) {
 			} else if err != nil {
 				log.Fatalf("Error fetching road: %v", err)
 			}
-			//fmt.Printf("RoadID %s\n", parking.RoadID)
-
+			if !(parking.Lon<lon+rangeLon && parking.Lon>lon-rangeLon){
+				continue
+			}
+			
 			if dist1, ok := list[parking.RoadID]; ok { //確認車格是否已在list內，有則比較直線距離，無則直接儲存
 
 				dist2 := getDist(lat, lon, parking.Lat, parking.Lon) //計算距離
@@ -449,16 +446,18 @@ func getData(lat float64, lon float64) (parkings [5][6]interface{}) {
 			//id = append(id, road.RoadID)
 		}
 	}
-
-	for i, v := range sortMapByValue(list)[:5] { //依照距離排序路段車格，並取前五
+	var parkings [][6]interface{}
+	for _, v := range sortMapByValue(list)[:len(list)] { //依照距離排序路段車格，並取前五
 		text := getDistText(lat, lon, list[v.Key][1], list[v.Key][2])
-		fmt.Printf("%s %f,%f %d %s \n", getRoadName(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text);
-		fmt.Printf("@@@",v);
-		parkings[i] = [6]interface{}{getRoadName(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text, v.Key} //儲存距離前五近車格，並回傳
-
+		// fmt.Printf("%s %f,%f %d %s \n", getRoadName(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text)
+		parkings=append(parkings,[6]interface{}{getRoadName(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text, v.Key}) //儲存距離前五近車格，並回傳
+		
 	}
-
-	return
+	if (len(parkings)!=0){
+		return parkings 
+	}else {
+		return "附近沒有位置"
+	}
 
 	/*查詢各路段 ID*/
 	// for _, i := range id {
