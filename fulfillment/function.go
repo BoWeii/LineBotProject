@@ -85,6 +85,9 @@ type Pair struct {
 	Value float64
 }
 
+const  rangeWE float64=0.009 ;
+const  rangeSN float64=0.008  ;
+
 // PairList A slice of Pairs that implements sort.Interface to sort by Value.
 type PairList []Pair
 
@@ -174,6 +177,7 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 					if _, ok := response.Entities["location"]; ok {
 						// log.Printf("@@@@@@@@", response.Entities["location"])
 						lat, lon := getGPS(response.Entities["location"]) //路名轉GPS
+						fmt.Printf("lat-->%f  lon__>%f\n",lat,lon);
 						resp = getData(lat, lon)                          //查詢車格資訊
 
 					} else {
@@ -402,9 +406,14 @@ func getData(lat float64, lon float64) (parkings [5][6]interface{}) {
 
 	//var parkings []parking
 	for _, i := range []int{2, 3} { //2為空位,3為非收費時段,datastore查詢沒有or的方法，所以須查詢兩次
+		fmt.Printf("lon+rangeSN ==> %f\n",lon+rangeSN);
+		fmt.Printf("lon-rangeSN ==>%f\n",lon-rangeSN);
 		query := datastore.NewQuery("NTPCParkings").
 			Filter("CellStatus =", false). //false代表沒有車，但必須確認ParkingStatus必須為2或3才可停
-			Filter("ParkingStatus =", i)
+			Filter("ParkingStatus =", i).
+			Filter("Lon >=",lon-1).Filter("Lon <=",lon+1)
+			// Filter("Lat >=",lat-rangeWE).Filter("Lat <=",lat+rangeWE)
+
 
 		it := datastoreProc.client.Run(datastoreProc.ctx, query)
 
@@ -443,7 +452,8 @@ func getData(lat float64, lon float64) (parkings [5][6]interface{}) {
 
 	for i, v := range sortMapByValue(list)[:5] { //依照距離排序路段車格，並取前五
 		text := getDistText(lat, lon, list[v.Key][1], list[v.Key][2])
-		// fmt.Printf("%s %f,%f %d %s\n", ID2Name(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text)
+		fmt.Printf("%s %f,%f %d %s \n", getRoadName(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text);
+		fmt.Printf("@@@",v);
 		parkings[i] = [6]interface{}{getRoadName(v.Key), list[v.Key][1], list[v.Key][2], int(list[v.Key][3]), text, v.Key} //儲存距離前五近車格，並回傳
 
 	}
