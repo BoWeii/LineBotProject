@@ -9,10 +9,10 @@ import (
 	//dialogflow "cloud.google.com/go/dialogflow/apiv2"
 	//structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/line/line-bot-sdk-go/linebot"
+	"project.com/fulfillment/query"
 	//"google.golang.org/api/option"
 	//dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 	//"project.com/fulfillment/carouselmessage"
-
 )
 
 // dialogflowProcessor has all the information for connecting with Dialogflow
@@ -20,8 +20,6 @@ import (
 // datastoreProcessor 存取 datastore
 
 const projectID string = "parkingproject-261207"
-
-var dialogflowProc dialogflowProcessor
 
 var bot *linebot.Client
 
@@ -33,19 +31,12 @@ var err error
 // }
 
 // Pair A data structure to hold a key/value pair.
-type Pair struct {
-	Key   string
-	Value float64
-}
-
-const rangeLon float64 = 0.009
-const rangeLat float64 = 0.008
 
 // init 初始化權限
 func init() {
 	bot, err = linebot.New("57cc60c3fc1530cc32ba896e1c4b7856", "GiKIwKk+Lwku0WeGEGnlEDBDDGC67tQVCSIMbcQaKpA2IyZPU6OgVSIdI0h1HUUG2Ky/psNLEEkjfnEZGITnJolxlEScGgLoWT/iKpwyinf/IJDgeB5gnIB0zmuag0vYlcs7WgOYdUg0CwbGXlWKIwdB04t89/1O/w1cDnyilFU=")
-	dialogflowProc.init(projectID, "parkingproject-261207-2933e4112308.json", "zh-TW", "Asia/Hong_Kong")
-	datastoreProc.init(projectID)
+	query.DialogflowProc.Init(projectID, "parkingproject-261207-2933e4112308.json", "zh-TW", "Asia/Hong_Kong")
+	query.DatastoreProc.Init(projectID)
 
 }
 
@@ -55,15 +46,15 @@ func replyUser(resp interface{}, event *linebot.Event) {
 	switch resp.(type) { //確認是何種類型訊息
 	case string:
 		respMessg = linebot.NewTextMessage(resp.(string))
-	case []parking:
-		parkings := resp.([]parking)
+	case []query.Parking:
+		parkings := resp.([]query.Parking)
 
 		var container *linebot.CarouselContainer
 
 		if parkings[0].Distance > 0 {
-			container = queryCarouselmesage(parkings, "加入最愛")
+			container = query.Carouselmesage(parkings, "加入最愛")
 		} else {
-			container = queryCarouselmesage(parkings, "移除")
+			container = query.Carouselmesage(parkings, "移除")
 		}
 		respMessg = linebot.NewFlexMessage("車位資訊。", container)
 	case *linebot.BubbleContainer:
@@ -106,12 +97,12 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 			switch message := event.Message.(type) {
 			case *linebot.TextMessage: //文字訊息
 
-				response := dialogflowProc.processNLP(message.Text, event.Source.UserID) //解析使用者所傳文字
+				response := query.DialogflowProc.ProcessNLP(message.Text, event.Source.UserID) //解析使用者所傳文字
 
 				if response.Intent == "FindParking" {
 					if _, ok := response.Entities["location"]; ok {
-						lat, lon := getGPS(response.Entities["location"]) //路名轉GPS
-						resp = getParkingsByGPS(lat, lon)                 //查詢車格資訊
+						lat, lon := query.GetGPS(response.Entities["location"]) //路名轉GPS
+						resp = query.GetParkingsByGPS(lat, lon)                 //查詢車格資訊
 					} else {
 						resp = response.Prompts //如果偵測到intent卻沒有entity，回傳提示輸入訊息
 					}
@@ -122,7 +113,7 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 			case *linebot.LocationMessage: //位置訊息
 				fmt.Printf("gps %f,%f\n", message.Latitude, message.Longitude)
 
-				parkings := getParkingsByGPS(message.Latitude, message.Longitude)
+				parkings := query.GetParkingsByGPS(message.Latitude, message.Longitude)
 
 				if len(parkings) == 0 {
 					resp = "你附近沒有空車位哦 😢"
@@ -141,7 +132,7 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 			log.Println("UserID", UserID, "  ", postbackData)
 
 			if postbackData == "favor" {
-				parkings := getParkingsByFavor(UserID)
+				parkings := query.GetParkingsByFavor(UserID)
 
 				if len(parkings) == 0 {
 					resp = "你還沒有最愛哦 😜"
@@ -150,9 +141,9 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 				}
 
 			} else if postbackData == "intro" {
-				resp = introBubbleMsg()
+				resp = query.IntroBubbleMsg()
 			} else {
-				resp = userFavorModify(UserID, postbackData)
+				resp = query.UserFavorModify(UserID, postbackData)
 			}
 
 		}

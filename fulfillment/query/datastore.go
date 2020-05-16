@@ -1,12 +1,14 @@
-package fulfillment
+package query
 
 import (
 	"context"
 
 	"cloud.google.com/go/datastore"
+
 )
 
-var datastoreProc datastoreProcessor
+//DatastoreProc datastore 實體
+var DatastoreProc datastoreProcessor
 
 type datastoreProcessor struct {
 	projectID string
@@ -14,7 +16,7 @@ type datastoreProcessor struct {
 	ctx       context.Context
 }
 
-func (ds *datastoreProcessor) init(data string) (err error) {
+func (ds *datastoreProcessor) Init(data string) (err error) {
 	ds.projectID = data
 	ds.ctx = context.Background()
 	ds.client, err = datastore.NewClient(ds.ctx, ds.projectID)

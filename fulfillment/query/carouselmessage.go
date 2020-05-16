@@ -1,4 +1,4 @@
-package fulfillment
+package query
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 )
 
-func getBubbleInfo(parking parking) (component []linebot.FlexComponent) {
+func getBubbleInfo(parking Parking) (component []linebot.FlexComponent) {
 	component = []linebot.FlexComponent{
 
 		&linebot.TextComponent{
@@ -88,7 +88,7 @@ func getBubbleInfo(parking parking) (component []linebot.FlexComponent) {
 	}
 	return
 }
-func createBubbleContainer(parking parking, postBack string) (container *linebot.BubbleContainer) {
+func createBubbleContainer(parking Parking, postBack string) (container *linebot.BubbleContainer) {
 	container = &linebot.BubbleContainer{
 		Type: linebot.FlexContainerTypeBubble,
 
@@ -145,7 +145,7 @@ func createBubbleContainer(parking parking, postBack string) (container *linebot
 }
 
 //Carouselmesage 產生訊息
-func queryCarouselmesage(roads []parking, action string) (container *linebot.CarouselContainer) {
+func Carouselmesage(roads []Parking, action string) (container *linebot.CarouselContainer) {
 	var bubbleConts []*linebot.BubbleContainer
 
 	for _, info := range roads {
@@ -158,7 +158,8 @@ func queryCarouselmesage(roads []parking, action string) (container *linebot.Car
 	return
 }
 
-func introBubbleMsg() (container *linebot.BubbleContainer) {
+//IntroBubbleMsg 介紹訊息
+func IntroBubbleMsg() (container *linebot.BubbleContainer) {
 	container = &linebot.BubbleContainer{
 		Type: linebot.FlexContainerTypeBubble,
 

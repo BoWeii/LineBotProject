@@ -1,4 +1,4 @@
-package fulfillment
+package query
 
 import (
 	"context"
@@ -12,6 +12,9 @@ import (
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 
 )
+
+//DialogflowProc  Dialogflow實體
+var DialogflowProc dialogflowProcessor
 
 // nlpResponse is webhook回應
 type nlpResponse struct {
@@ -31,7 +34,7 @@ type dialogflowProcessor struct {
 }
 
 //初始化 dialogflow (pointer receiver)
-func (dp *dialogflowProcessor) init(data ...string) (err error) {
+func (dp *dialogflowProcessor) Init(data ...string) (err error) {
 	dp.projectID = data[0]
 	dp.authJSONFilePath = data[1]
 	dp.lang = data[2]
@@ -45,7 +48,7 @@ func (dp *dialogflowProcessor) init(data ...string) (err error) {
 }
 
 //dialogflow 分析語意 (pointer receiver)
-func (dp *dialogflowProcessor) processNLP(rawMessage string, username string) (r nlpResponse) {
+func (dp *dialogflowProcessor) ProcessNLP(rawMessage string, username string) (r nlpResponse) {
 	//DetectIntentRequest struct https://godoc.org/google.golang.org/genproto/googleapis/cloud/dialogflow/v2#StreamingDetectIntentRequest
 	sessionID := username
 	request := dialogflowpb.DetectIntentRequest{
