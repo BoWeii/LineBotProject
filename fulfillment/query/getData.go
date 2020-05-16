@@ -277,34 +277,34 @@ func findFavorIndex(slice []string, val string) (int, bool) {
 }
 
 /*查詢各路段 ID*/
-// for _, i := range id {
+//  for _, i := range id {
 
-// 	query = datastore.NewQuery("NTPCParkings").
-// 		Filter("RoadID =", i).
-// 		Order("RoadID").
-// 		Limit(1)
+//  	query = datastore.NewQuery("NTPCParkings").
+//  		Filter("RoadID =", i).
+//  		Order("RoadID").
+//  		Limit(1)
 
-// 	it = datastoreProc.client.Run(datastoreProc.ctx, query)
-// 	for {
-// 		var road road
-// 		_, err := it.Next(&road)
-// 		if err == iterator.Done {
-// 			break
-// 		}
-// 		if err != nil {
-// 			log.Fatalf("Error fetching road: %v", err)
-// 		}
+//  	it = datastoreProc.client.Run(datastoreProc.ctx, query)
+//  	for {
+//  		var road road
+//  		_, err := it.Next(&road)
+//  		if err == iterator.Done {
+//  			break
+//  		}
+//  		if err != nil {
+//  			log.Fatalf("Error fetching road: %v", err)
+//  		}
 
-/*geocoding gps 轉路名*/
+// /*geocoding gps 轉路名*/
 
-// 		fmt.Printf("RoadID %s ,%f ,%f ", road.RoadID, road.Lat, road.Lon)
-// 		geo := "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + fmt.Sprintf("%f", road.Lat) + "," + fmt.Sprintf("%f", road.Lon) + "&result_type=route&language=zh-tw&key=AIzaSyAhsij-kCTyOzK9Vq83zemmxJXTdNJVkV8"
-// 		resp, _ := http.Get(geo)
-// 		body, _ := ioutil.ReadAll(resp.Body)
-// 		jq := gojsonq.New().FromString(string(body))
-// 		res := jq.From("results.[0].address_components").Where("types.[0]", "=", "route").Get()
-// 		fmt.Println(res.([]interface{})[0].(map[string]interface{})["long_name"].(string))
+//  		fmt.Printf("RoadID %s ,%f ,%f ", road.RoadID, road.Lat, road.Lon)
+//  		geo := "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + fmt.Sprintf("%f", road.Lat) + "," + fmt.Sprintf("%f", road.Lon) + "&result_type=route&language=zh-tw&key=AIzaSyAhsij-kCTyOzK9Vq83zemmxJXTdNJVkV8"
+//  		resp, _ := http.Get(geo)
+//  		body, _ := ioutil.ReadAll(resp.Body)
+//  		jq := gojsonq.New().FromString(string(body))
+//  		res := jq.From("results.[0].address_components").Where("types.[0]", "=", "route").Get()
+//  		fmt.Println(res.([]interface{})[0].(map[string]interface{})["long_name"].(string))
 
-// 	}
+//  	}
 
-// }
+//  }
