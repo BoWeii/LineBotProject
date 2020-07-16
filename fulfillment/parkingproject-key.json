@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "parkingproject-2-283415",
+  "private_key_id": "a19cca1017148c37df90a0729e3a0ea42486ef7e",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC+YRyuxuPl892n\npb0gWnfIoiUu4sLpPedBlVpdRMBhOpZauCdBhYBSsMLmHpR/MUa5lF7v7S+aWioK\np8lqSDdBJo0CNRaY+RB4COCmaXc2Cg/tYU6fnR06WlnOk9N5TEukdIWhrGz8gl4o\n+LmIClkns9NRDrY1LMC73gvkHBIr2MnlGU9bn/cDj5DcXVqxZ+hgGsIKbMaIJINj\nSzsLTecl3t6W+7P4dRRLUurQcSPEWgX1H0dHAU/D7R0W1gSeFycUaaFvkZRDUsX5\nOIRdQWu2GiQ3rjb8iyqDDwy8ruNrSu2rzy89XAl0AgvE4xA0TLP4kgaf9VVhX5Ld\nQsuBpDf1AgMBAAECggEABZ66813jtGdyj6m7ijeheZwab5E6InCKtyDq6KidlUE0\nLGbAoeqIUz3smFEmyRUcpWB/56Kfg8r4RWrr7eXxMPcrtSOkEHf/HcwFSw7/Tz+/\ndfPSwlt9AA/9aV/BH7+PgWyp1Tql16kcO9FmiLblfYqNc8MfazUbAMYZS8PttWWa\ndRTHTzitSaOwvvGdS2IZmLmj4Zqxj6ilOgKmparPY1kTsNZAFnDpiBhs/22i9C1Y\n77CwOoSb7h5jEvtQiqz3YD4TV6winV917JTrxWZI7yZtscsjDqZ0/7mW1+QXAOM7\nSk7D8cG+SN+giIQ/6p4imMygfWymazBK/kXNWwuFMQKBgQD72Scv4RHbBVqy97Ag\nrRr2/bAkXgjjWlgpdb4k6zAcW+TGOTC5HvDs4zpApkPRY0rH5oFGdbhSopOV2FlV\nUqQ0myspvbGm2jncoQzx59VexBrA0fXVIY/vEnl+TbrlFD5OdSQXPp814hoZhgip\nrGHtai0zorhQSw/tjtLSu7zH2wKBgQDBhIxyk8lSjmWZRCp13vo+dqFnySkR+XWb\nYopaXJ2QdTqejYZnFhNrMuiH9OZCFYHzd2DK71gDpmyZ8OUEmZWb3OlOiCFBuJGu\nw5etUmSvP1u50ZXdpjRxI36iLJSDxKtiq7jo/t39Y/UrNqI9CxYERXRbGSPPpnLR\nx7dMdxmwbwKBgCeEFBT8IJwYA/ouyPDnmGKGvZuHMafSpiCjO9l5GYxpksTTdmSl\niTHyGVLJg7yX8sTY0xHmKKy2m6eYUbQEioVCj4w2GmjOtuN6VZijQqRi6ru0dfki\nEf52DKAXvCpzea8/zBDln3+J4YR9tmBBDwB8d2kxr+/RR0eD8GpmUKGfAoGBAJZt\ncr+eIeEKz+9UDa2SpvPnQ5BpzoMqZ0FiWCnl1JV2ixq06MU5Y97ws9D7jgHQtjOL\nmLInW0N7GvCPUXdB7Ao8rx9csn1j+9reMAmLArk3hxXq1ZR2nk1UShvGi6viNVd+\nJT7435cZHHt6/KJ2+6ZWVxx5blz8BkUL+nB2JIIBAoGBAN2z33JoPGAGidNy8DNY\ntTfeK0K8N7FDKnZ8/vgBWfRBET46iWPQiUraNL1az5s+ek3WOAazIFONA8v7Se2k\neLIRAAi2uX1A4IGhPWLe6QP/CzkBzYeXzVZ+YdM7YR+xhul/C1HR4lN6fE5WRQ+C\nLQ13o1MEk07brCe90AsL2LdC\n-----END PRIVATE KEY-----\n",
+  "client_email": "dialogflow-intergrations@parkingproject-2-283415.iam.gserviceaccount.com",
+  "client_id": "100255731669907129388",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dialogflow-intergrations%40parkingproject-2-283415.iam.gserviceaccount.com"
+}

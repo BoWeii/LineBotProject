@@ -19,7 +19,7 @@ import (
 
 // datastoreProcessor 存取 datastore
 
-const projectID string = "parkingproject-261207"
+const projectID string = "parkingproject-2-283415"
 
 var bot *linebot.Client
 
@@ -35,7 +35,7 @@ var err error
 // init 初始化權限
 func init() {
 	bot, err = linebot.New("57cc60c3fc1530cc32ba896e1c4b7856", "GiKIwKk+Lwku0WeGEGnlEDBDDGC67tQVCSIMbcQaKpA2IyZPU6OgVSIdI0h1HUUG2Ky/psNLEEkjfnEZGITnJolxlEScGgLoWT/iKpwyinf/IJDgeB5gnIB0zmuag0vYlcs7WgOYdUg0CwbGXlWKIwdB04t89/1O/w1cDnyilFU=")
-	query.DialogflowProc.Init(projectID, "parkingproject-261207-2933e4112308.json", "zh-TW", "Asia/Hong_Kong")
+	query.DialogflowProc.Init(projectID, "parkingproject-key.json", "zh-TW", "Asia/Hong_Kong")
 	query.DatastoreProc.Init(projectID)
 
 }

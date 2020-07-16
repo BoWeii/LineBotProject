@@ -8,7 +8,7 @@ import (
 
 //main 測試function執行
 func main() {
-	linebotProject.UpdateParkingInfo(context.Background(), linebotProject.PubSubMessage{Data: []byte("update")})
+	// linebotProject.UpdateParkingInfo(context.Background(), linebotProject.PubSubMessage{Data: []byte("update")})
 	table.GpsToRoadName()
 	table.Upload(context.Background())
 }
