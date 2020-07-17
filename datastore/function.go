@@ -32,7 +32,7 @@ func UpdateParkingInfo(ctx context.Context, m PubSubMessage) error {
 
 	//fileURL := "https://tcgbusfs.blob.core.windows.net/blobtcmsv/TCMSV_roadquery.gz"
 	//TPEParkingInfo, err := getParkingInfo(fileURL)
-	NTPCParkingInfo, err := getParkingInfo("https://data.ntpc.gov.tw/od/data/api/1A71BA9C-EF21-4524-B882-6D085DF2877A?$format=json")
+	NTPCParkingInfo, err := getParkingInfo("https://data.ntpc.gov.tw/api/datasets/54A507C4-C038-41B5-BF60-BBECB9D052C6/json?page=30&size=1000")
 	//fmt.Printf(*TPEParkingInfo)
 	if err != nil {
 		log.Print(err)
