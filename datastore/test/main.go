@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 	linebotProject "project.com/datastore"
-	"project.com/datastore/table"
+	// "project.com/datastore/table"
 )
 
 //main 測試function執行
 func main() {
 	linebotProject.UpdateParkingInfo(context.Background(), linebotProject.PubSubMessage{Data: []byte("update")})
-	table.GpsToRoadName()
-	table.Upload(context.Background())
+	// table.GpsToRoadName()
+	// table.Upload(context.Background())
 }
 
 //部署指令

@@ -37,6 +37,7 @@ type TPE struct {
 
 type cellNTPC struct {
 	ID            int     `json:"ID,string"`            //車格序號
+	CELLID		  int	  `json:"CELLID,string"`     //收費時段判斷
 	Name          string  `json:"NAME"`                 //車格類型
 	Day           string  `json:"DAY"`                  //收費天
 	Hour          string  `json:"Hour"`                 //收費時段
@@ -49,6 +50,7 @@ type cellNTPC struct {
 	ParkingStatus int     `json:"ParkingStatus,string"` //車格狀態 　1：有車、2：空位、3：非收費時段、4：時段性禁停、5：施工（民眾申請施工租用車格時使用）
 	Lat           float64 `json:"lat,string"`           //緯度
 	Lon           float64 `json:"lon,string"`           //經度
+	
 }
 
 //NTPC 新北市車格

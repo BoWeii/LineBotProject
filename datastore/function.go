@@ -1,7 +1,8 @@
 package datastore
 
 import (
-	"compress/gzip"
+	// "compress/gzip"
+	// "bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -12,13 +13,16 @@ import (
 	"strconv"
 	"strings"
 
-	"cloud.google.com/go/datastore"
-	xml2json "github.com/basgys/goxml2json"
-	parking "project.com/datastore/parkingstruct"
+	// "strings"
+	// "reflect"
 
+	"cloud.google.com/go/datastore"
+
+	// xml2json "github.com/basgys/goxml2json"
+	parking "project.com/datastore/parkingstruct"
 )
 
-const projectID string = "parkingproject-261207"
+const projectID string = "parkingproject-2-283415"
 
 //PubSubMessage gcp pub/sub payload
 type PubSubMessage struct {
@@ -32,7 +36,7 @@ func UpdateParkingInfo(ctx context.Context, m PubSubMessage) error {
 
 	//fileURL := "https://tcgbusfs.blob.core.windows.net/blobtcmsv/TCMSV_roadquery.gz"
 	//TPEParkingInfo, err := getParkingInfo(fileURL)
-	NTPCParkingInfo, err := getParkingInfo("https://data.ntpc.gov.tw/api/datasets/54A507C4-C038-41B5-BF60-BBECB9D052C6/json?page=30&size=1000")
+	NTPCParkingInfo, err := getParkingInfo("https://data.ntpc.gov.tw/api/datasets/54A507C4-C038-41B5-BF60-BBECB9D052C6/json")
 	//fmt.Printf(*TPEParkingInfo)
 	if err != nil {
 		log.Print(err)
@@ -40,7 +44,7 @@ func UpdateParkingInfo(ctx context.Context, m PubSubMessage) error {
 
 	var NTPC parking.NTPC
 	roadKeys := []*datastore.Key{}
-
+	fmt.Printf("%s", NTPCParkingInfo)
 	//json轉struct
 	if err := json.Unmarshal([]byte(*NTPCParkingInfo), &NTPC.Cells); err != nil {
 		log.Fatalf("error: %v", err)
@@ -99,45 +103,72 @@ func putParkingInfo(ctx context.Context, roadKeys []*datastore.Key, parkings int
 
 //GetParkingInfo 取得停車格資訊(TPE)
 func getParkingInfo(url string) (*string, error) {
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-
 	var data string
-	if strings.Contains(url, ".gz") {
-		reader, err := gzip.NewReader(resp.Body)
+	data = "["
+	for i := 0; i <= 30; i++ {
+
+		resp, err := http.Get(url + "?page=" + strconv.Itoa(i) + "&size=1000")
 		if err != nil {
 			return nil, err
 		}
-		defer reader.Close()
-
-		body, err := ioutil.ReadAll(reader)
-		if err != nil {
-			return nil, err
-		}
-
-		var xml = strings.NewReader(string(body))
-		json, err := xml2json.Convert(xml)
-		if err != nil {
-			log.Print("Failed to convert xml to json")
-		}
-
-		data = json.String()
-	} else {
+		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, err
+			log.Fatal(err)
 		}
+		temp := string(body)
+		temp = strings.Replace(temp, "[", "", -1)
+		temp = strings.Replace(temp, "]", "", -1)
 
-		data = string(body)
-		data = strings.ReplaceAll(data, "\"CELLSTATUS\""+":"+"\"Y\"", "\"CELLSTATUS\""+":"+"\"true\"")
-		data = strings.ReplaceAll(data, "\"CELLSTATUS\""+":"+"\"N\"", "\"CELLSTATUS\""+":"+"\"false\"")
-		fmt.Print()
+		data = data + temp
 	}
+	data = data + "]"
+	// fmt.Printf(data)
 
-	defer resp.Body.Close()
+	// var temp string
+	// temp=url+"?page="+"0"+"&size=1000"
+	// // fmt.Printf("################# %s",temp)
+
+	// resp, err := http.Get(temp)
+	// if err != nil {
+	// 		return nil, err
+	// }
+
+	// var data string ?page=1&size=30900
+	// if strings.Contains(url, ".gz") {
+	// 	reader, err := gzip.NewReader(resp.Body)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	defer reader.Close()
+
+	// 	body, err := ioutil.ReadAll(reader)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+
+	// 	var xml = strings.NewReader(string(body))
+	// 	json, err := xml2json.Convert(xml)
+	// 	if err != nil {
+	// 		log.Print("Failed to convert xml to json")
+	// 	}
+
+	// 	data = json.String()
+	// } else {
+	// 	body, err := ioutil.ReadAll(resp.Body)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+
+	// 	data = string(body)
+	// 	data = strings.ReplaceAll(data, "\"CELLSTATUS\""+":"+"\"Y\"", "\"CELLSTATUS\""+":"+"\"true\"")
+	// 	data = strings.ReplaceAll(data, "\"CELLSTATUS\""+":"+"\"N\"", "\"CELLSTATUS\""+":"+"\"false\"")
+	// 	fmt.Print()
+	// }
+
+	// defer resp.Body.Close()
+	// var tt string
+	// tt = "123"
 	return &data, nil
 }
 
@@ -161,5 +192,3 @@ func getParkingInfo(url string) (*string, error) {
 // 		}
 // 	}
 // }
-
-
