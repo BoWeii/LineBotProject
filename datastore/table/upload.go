@@ -1,14 +1,15 @@
 package table
+
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"log"
 	"os"
-	"cloud.google.com/go/datastore"
-	"context"
 	"strings"
-)
 
+	"cloud.google.com/go/datastore"
+)
 
 /*上傳roadID-roadNmae talbe*/
 type ID2Name struct {
@@ -70,6 +71,6 @@ func B(ctx context.Context, roadKeys []*datastore.Key, datas interface{}) {
 	if _, err := client.PutMulti(ctx, roadKeys[0:], datas.(*TTT).IDs[0:]); err != nil {
 		log.Fatalf("PutMulti ID: %v", err)
 	}
-	fmt.Printf("Info Saved sucess")
+	fmt.Printf("table Info Saved sucess")
 
 }

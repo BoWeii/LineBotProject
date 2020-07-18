@@ -37,7 +37,7 @@ type TPE struct {
 
 type cellNTPC struct {
 	ID            int     `json:"ID,string"`            //車格序號
-	CELLID		  int	  `json:"CELLID,string"`     //收費時段判斷
+	CELLID		  float64 `json:"CELLID,string"`     //收費時段判斷
 	Name          string  `json:"NAME"`                 //車格類型
 	Day           string  `json:"DAY"`                  //收費天
 	Hour          string  `json:"Hour"`                 //收費時段
