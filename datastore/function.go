@@ -18,6 +18,7 @@ import (
 	"cloud.google.com/go/datastore"
 	// xml2json "github.com/basgys/goxml2json"
 	parking "project.com/datastore/parkingstruct"
+
 )
 
 const projectID string = "parkingproject-2-283415"
@@ -42,9 +43,7 @@ func UpdateParkingInfo(ctx context.Context, m PubSubMessage) error {
 
 	var NTPC parking.NTPC
 	roadKeys := []*datastore.Key{}
-	fmt.Println("!!!")
-	fmt.Printf("%s", NTPCParkingInfo)
-	fmt.Println("@@@@@@")
+
 	//json轉struct
 	if err := json.Unmarshal([]byte(*NTPCParkingInfo), &NTPC.Cells); err != nil {
 		log.Fatalf("error: %v", err)
@@ -121,13 +120,13 @@ func getParkingInfo(url string) (*string, error) {
 		temp = strings.Replace(temp, "]", "", -1)
 		temp = strings.ReplaceAll(temp, "\"CELLSTATUS\""+":"+"\"Y\"", "\"CELLSTATUS\""+":"+"\"true\"")
 		temp = strings.ReplaceAll(temp, "\"CELLSTATUS\""+":"+"\"N\"", "\"CELLSTATUS\""+":"+"\"false\"")
-		data = data + temp +","
+		data = data + temp + ","
 	}
-	data=data[:len(data)-1]
-	data+="]"
+	data = data[:len(data)-1]
+	data += "]"
 	// data = strings.ReplaceAll(data, "\"CELLSTATUS\""+":"+"\"Y\"", "\"CELLSTATUS\""+":"+"\"true\"")
 	// data = strings.ReplaceAll(data, "\"CELLSTATUS\""+":"+"\"N\"", "\"CELLSTATUS\""+":"+"\"false\"")
-	
+
 	// fmt.Printf(data)
 
 	// var temp string

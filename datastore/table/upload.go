@@ -5,25 +5,27 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"strings"
 
 	"cloud.google.com/go/datastore"
+
 )
 
 /*上傳roadID-roadNmae talbe*/
-type ID2Name struct {
+type roadInfo struct {
 	RoadID   string
 	RoadName string
 }
-type TTT struct {
-	IDs []*ID2Name
+type roads struct {
+	IDs []*roadInfo
 }
 
 //a
-func Upload(ctx context.Context) error {
+func UploadRoads(ctx context.Context) error {
 
-	var datas TTT
+	var datas roads
 	roadKeys := []*datastore.Key{}
 
 	file, err := os.Open("data.txt")
@@ -44,10 +46,10 @@ func Upload(ctx context.Context) error {
 
 	for _, eachline := range txtlines {
 		dataSlice := strings.Split(eachline, " ")
-		var a ID2Name
+		var a roadInfo
 		a.RoadID = dataSlice[1]
 		a.RoadName = dataSlice[4]
-		// log.Print(a.RoadID, a.RoadName)
+		log.Print(a.RoadID, a.RoadName)
 		datas.IDs = append(datas.IDs, &a)
 	}
 
@@ -57,19 +59,29 @@ func Upload(ctx context.Context) error {
 		roadKeys = append(roadKeys, roadKey)
 
 	}
-	B(ctx, roadKeys, &datas)
+	putRoadName(ctx, roadKeys, &datas)
 	return nil
 }
 
 //put路段資訊
-func B(ctx context.Context, roadKeys []*datastore.Key, datas interface{}) {
-	// fmt.Print("@@@", datas)
+func putRoadName(ctx context.Context, roadKeys []*datastore.Key, datas *roads) {
+
 	client, err := datastore.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
-	if _, err := client.PutMulti(ctx, roadKeys[0:], datas.(*TTT).IDs[0:]); err != nil {
-		log.Fatalf("PutMulti ID: %v", err)
+	n := math.Ceil(float64(len(roadKeys)) / 500) //一次最多put500筆
+	tmp := 0
+	for i := 1; i <= int(n); i++ {
+		var size int
+		if size = len(roadKeys); i*500 < len(roadKeys) {
+			size = i * 500
+		}
+
+		if _, err := client.PutMulti(ctx, roadKeys[tmp:size-1], datas.IDs[tmp:size-1]); err != nil {
+			log.Fatalf("PutMulti ID: %v", err)
+		}
+		tmp = size - 1
 	}
 	fmt.Printf("table Info Saved sucess")
 

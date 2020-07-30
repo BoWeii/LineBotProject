@@ -10,11 +10,12 @@ import (
 	"cloud.google.com/go/datastore"
 	"github.com/thedevsaddam/gojsonq"
 	"google.golang.org/api/iterator"
+
 )
 
 type Parking struct {
 	ID            int     //車格序號
-	CELLID        float64 //收費時段判斷
+	CELLID        float64 //車格編號
 	Name          string  //車格類型
 	Day           string  //收費天
 	Hour          string  //收費時段

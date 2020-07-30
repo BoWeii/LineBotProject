@@ -21,6 +21,7 @@ const rangeLat float64 = 0.008
 //Parking 停車格
 type Parking struct {
 	ID            int     //車格序號
+	CELLID        float64 //車格編號
 	Name          string  //車格類型
 	Day           string  //收費天
 	Hour          string  //收費時段
@@ -100,7 +101,8 @@ func getRoadName(id string) (name string) {
 	key := datastore.NameKey("NTPCRoadName", id, nil)
 	road := new(roadName)
 	if err := DatastoreProc.client.Get(DatastoreProc.ctx, key, road); err != nil {
-		log.Fatalf("Error fetching road name: %v", err)
+
+		log.Fatalf("Error fetching road name:%s %v",id, err)
 	}
 
 	name = road.RoadName
