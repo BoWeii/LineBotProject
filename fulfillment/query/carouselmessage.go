@@ -10,7 +10,6 @@ import (
 
 func getBubbleInfo(parking Parking) (component []linebot.FlexComponent) {
 	component = []linebot.FlexComponent{
-
 		&linebot.TextComponent{
 			Type:   linebot.FlexComponentTypeText,
 			Text:   parking.RoadName,
@@ -88,7 +87,16 @@ func getBubbleInfo(parking Parking) (component []linebot.FlexComponent) {
 	}
 	return
 }
-func createBubbleContainer(parking Parking, postBack string) (container *linebot.BubbleContainer) {
+func createBubbleContainer(parking Parking, action string, route ...address) (container *linebot.BubbleContainer) {
+	var uri string
+	if len(route) != 0 {
+		// &origin=" + route[0].Original +
+		//https://www.google.com/maps/dir/?api=1&origin= &destination= &waypoints=
+		uri = "https://www.google.com/maps/dir/?api=1&origin=" + route[0].Original + "&destination=" + route[0].Destination + "&waypoints=" + fmt.Sprintf("%f", parking.Lat) + "," + fmt.Sprintf("%f", parking.Lon)
+		println(uri)
+	} else {
+		uri = "https://www.google.com/maps/search/?api=1&query=" + fmt.Sprintf("%f", parking.Lat) + "," + fmt.Sprintf("%f", parking.Lon)
+	}
 	container = &linebot.BubbleContainer{
 		Type: linebot.FlexContainerTypeBubble,
 
@@ -121,7 +129,7 @@ func createBubbleContainer(parking Parking, postBack string) (container *linebot
 					Flex:   linebot.IntPtr(2),
 					Action: &linebot.URIAction{
 						Label: "導航",
-						URI:   "https://www.google.com/maps/search/?api=1&query=" + fmt.Sprintf("%f", parking.Lat) + "," + fmt.Sprintf("%f", parking.Lon),
+						URI:   uri,
 					},
 				},
 				&linebot.ButtonComponent{
@@ -132,8 +140,8 @@ func createBubbleContainer(parking Parking, postBack string) (container *linebot
 					Flex:   linebot.IntPtr(3),
 					Margin: linebot.FlexComponentMarginTypeXl,
 					Action: &linebot.PostbackAction{
-						Label: postBack,
-						Data:  "action=" + postBack + "&roadID=" + parking.RoadID,
+						Label: action,
+						Data:  "action=" + action + "&roadID=" + parking.RoadID,
 					},
 				},
 			},
@@ -144,12 +152,32 @@ func createBubbleContainer(parking Parking, postBack string) (container *linebot
 	return
 }
 
-//Carouselmesage 產生訊息
-func Carouselmesage(roads []Parking, action string) (container *linebot.CarouselContainer) {
+//CreateCarouselmesage 產生訊息
+func CreateCarouselmesage(info interface{}) (container *linebot.CarouselContainer) {
 	var bubbleConts []*linebot.BubbleContainer
-
-	for _, info := range roads {
-		bubbleConts = append(bubbleConts, createBubbleContainer(info, action))
+	var parkings []Parking
+	var action string
+	var route address
+	switch info.(type) {
+	case []Parking:
+		parkings = info.([]Parking)
+		if int(parkings[0].Distance) < 0 {
+			action = "移除"
+		} else {
+			action = "加入最愛"
+		}
+	case RouteWithParkings:
+		routeWithParkings := info.(RouteWithParkings)
+		parkings = routeWithParkings.Parkings
+		route = routeWithParkings.Address
+		action = "加入最愛"
+	}
+	for _, parking := range parkings {
+		if route == (address{}) {
+			bubbleConts = append(bubbleConts, createBubbleContainer(parking, action))
+		} else {
+			bubbleConts = append(bubbleConts, createBubbleContainer(parking, action, route))
+		}
 	}
 	container = &linebot.CarouselContainer{
 		Type:     linebot.FlexContainerTypeCarousel,
@@ -201,14 +229,142 @@ func IntroBubbleMsg() (container *linebot.BubbleContainer) {
 					Color:  "#292b3b",
 					Height: linebot.FlexButtonHeightTypeSm,
 					Flex:   linebot.IntPtr(2),
-					Action: &linebot.URIAction{
+					Action: &linebot.PostbackAction{
 						Label: "開始使用",
-						URI:   "line://nv/location",
+						Data:  "query",
 					},
 				},
 			},
 		},
 		Size: linebot.FlexBubbleSizeTypeMega,
+	}
+
+	return
+}
+
+//SearchBubbleMsg 搜尋訊息
+func SearchBubbleMsg() (container *linebot.BubbleContainer) {
+	container = &linebot.BubbleContainer{
+		Type: linebot.FlexContainerTypeBubble,
+
+		Hero: &linebot.ImageComponent{
+			Type: linebot.FlexComponentTypeImage,
+			URL:  "https://upload.cc/i1/2020/08/11/54dLJe.png",
+			Size: linebot.FlexImageSizeType3xl,
+		},
+		Styles: &linebot.BubbleStyle{
+			Hero: &linebot.BlockStyle{
+				BackgroundColor: "#ccd2e8",
+			},
+		},
+		Body: &linebot.BoxComponent{
+			Type:    linebot.FlexComponentTypeBox,
+			Layout:  linebot.FlexBoxLayoutTypeVertical,
+			Spacing: linebot.FlexComponentSpacingTypeLg,
+			Contents: []linebot.FlexComponent{
+				&linebot.TextComponent{
+					Type: linebot.FlexComponentTypeText,
+					Text: "需要什麼協助呢？",
+					Wrap: true,
+				},
+			},
+		},
+		Footer: &linebot.BoxComponent{
+			Type:   linebot.FlexComponentTypeBox,
+			Layout: linebot.FlexBoxLayoutTypeVertical,
+			Contents: []linebot.FlexComponent{
+
+				&linebot.ButtonComponent{
+					Type:   linebot.FlexComponentTypeButton,
+					Style:  linebot.FlexButtonStyleTypeLink,
+					Margin: linebot.FlexComponentMarginTypeSm,
+					Height: linebot.FlexButtonHeightTypeSm,
+					Flex:   linebot.IntPtr(2),
+					Action: &linebot.URIAction{
+						Label: "搜尋車格",
+						URI:   "line://nv/location",
+					},
+				},
+				&linebot.ButtonComponent{
+					Type:  linebot.FlexComponentTypeButton,
+					Style: linebot.FlexButtonStyleTypeLink,
+
+					Height: linebot.FlexButtonHeightTypeSm,
+					Margin: linebot.FlexComponentMarginTypeSm,
+					Flex:   linebot.IntPtr(2),
+					Action: &linebot.PostbackAction{
+						Label:       "規劃路線",
+						DisplayText: "規劃路線",
+						Data:        "route",
+					},
+				},
+				&linebot.ButtonComponent{
+					Type:  linebot.FlexComponentTypeButton,
+					Style: linebot.FlexButtonStyleTypeLink,
+
+					Height: linebot.FlexButtonHeightTypeSm,
+					Margin: linebot.FlexComponentMarginTypeSm,
+					Flex:   linebot.IntPtr(2),
+					Action: &linebot.PostbackAction{
+						Label:       "查詢欠費",
+						DisplayText: "查詢欠費",
+						Data:        "fee",
+					},
+				},
+			},
+		},
+		Size: linebot.FlexBubbleSizeTypeKilo,
+	}
+
+	return
+}
+
+//EmptyParkingBubbleMsg 查無車位訊息
+func EmptyParkingBubbleMsg(route address) (container *linebot.BubbleContainer) {
+	container = &linebot.BubbleContainer{
+		Type: linebot.FlexContainerTypeBubble,
+
+		Hero: &linebot.ImageComponent{
+			Type: linebot.FlexComponentTypeImage,
+			URL:  "https://upload.cc/i1/2020/08/11/AKUjRz.png",
+			Size: linebot.FlexImageSizeType3xl,
+		},
+		Styles: &linebot.BubbleStyle{
+			Hero: &linebot.BlockStyle{
+				BackgroundColor: "#d7b082",
+			},
+		},
+		Body: &linebot.BoxComponent{
+			Type:    linebot.FlexComponentTypeBox,
+			Layout:  linebot.FlexBoxLayoutTypeVertical,
+			Spacing: linebot.FlexComponentSpacingTypeLg,
+			Contents: []linebot.FlexComponent{
+				&linebot.TextComponent{
+					Type: linebot.FlexComponentTypeText,
+					Text: "目的地附近沒有空車位哦 ，直接幫你導航好嗎😢",
+					Wrap: true,
+				},
+			},
+		},
+		Footer: &linebot.BoxComponent{
+			Type:   linebot.FlexComponentTypeBox,
+			Layout: linebot.FlexBoxLayoutTypeVertical,
+			Contents: []linebot.FlexComponent{
+
+				&linebot.ButtonComponent{
+					Type:   linebot.FlexComponentTypeButton,
+					Style:  linebot.FlexButtonStyleTypeLink,
+					Margin: linebot.FlexComponentMarginTypeSm,
+					Height: linebot.FlexButtonHeightTypeSm,
+					Flex:   linebot.IntPtr(2),
+					Action: &linebot.URIAction{
+						Label: "好",
+						URI:   "https://www.google.com/maps/dir/?api=1&origin=" + route.Original + "&destination=" + route.Destination,
+					},
+				},
+			},
+		},
+		Size: linebot.FlexBubbleSizeTypeKilo,
 	}
 
 	return

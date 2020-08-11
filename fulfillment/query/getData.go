@@ -12,11 +12,22 @@ import (
 	"cloud.google.com/go/datastore"
 	"github.com/thedevsaddam/gojsonq"
 	"google.golang.org/api/iterator"
-
 )
 
 const rangeLon float64 = 0.009
 const rangeLat float64 = 0.008
+const googleMapAPIKey string = "AIzaSyDOa8n59m_dBNvGW_uqIcEKLT8asSQ680U"
+
+type address struct {
+	Original    string
+	Destination string
+}
+
+// RouteWithParkings 導航地址
+type RouteWithParkings struct {
+	Address  address
+	Parkings []Parking
+}
 
 //Parking 停車格
 type Parking struct {
@@ -65,7 +76,7 @@ func getMapDist(userLat float64, userLon float64, lat float64, lon float64) (dis
 	destinations := floatToString(lat) + "," + floatToString(lon)
 	// log.Printf("origins===",origins)
 	// log.Printf("destinations===",destinations)
-	url := "https://maps.googleapis.com/maps/api/distancematrix/json?origins=" + origins + "&destinations=" + destinations + "&key=AIzaSyAhsij-kCTyOzK9Vq83zemmxJXTdNJVkV8"
+	url := "https://maps.googleapis.com/maps/api/distancematrix/json?origins=" + origins + "&destinations=" + destinations + "&key=" + googleMapAPIKey
 	//fmt.Print(url)
 	resp, _ := http.Get(url)
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -81,7 +92,7 @@ func getMapDist(userLat float64, userLon float64, lat float64, lon float64) (dis
 //GetGPS 路名轉gps
 func GetGPS(roadName string) (lat float64, lon float64) {
 
-	geocoding := "https://maps.googleapis.com/maps/api/geocode/json?address=" + roadName + "&key=AIzaSyAhsij-kCTyOzK9Vq83zemmxJXTdNJVkV8"
+	geocoding := "https://maps.googleapis.com/maps/api/geocode/json?address=" + roadName + "&key=" + googleMapAPIKey
 	resp, _ := http.Get(geocoding)
 	body, _ := ioutil.ReadAll(resp.Body)
 	jq := gojsonq.New().FromString(string(body))    //gojsonq解析json
@@ -102,7 +113,7 @@ func getRoadName(id string) (name string) {
 	road := new(roadName)
 	if err := DatastoreProc.client.Get(DatastoreProc.ctx, key, road); err != nil {
 
-		log.Fatalf("Error fetching road name:%s %v",id, err)
+		log.Fatalf("Error fetching road name:%s %v", id, err)
 	}
 
 	name = road.RoadName
@@ -156,19 +167,25 @@ func GetParkingsByFavor(userID string) (result []Parking) {
 	return parkingList
 }
 
+//GetParkingByRoute
+func GetParkingByRoute() {
+
+}
+
 // GetParkingsByGPS  以GPS找車位資料
-func GetParkingsByGPS(lat float64, lon float64) (result []Parking) {
+func GetParkingsByGPS(lat float64, lon float64, IsOnlyEmpty bool) (result []Parking) {
 
 	//datastore 查詢剩餘車位
 	parkingList := make(map[string]Parking) //儲存各路段離使用者最近且為空位的車格(一個路段一個) ex:[RoadID][distance,lat,lon,剩餘數量]
 
 	for _, i := range []int{2, 3} { //2為空位,3為非收費時段,datastore查詢沒有or的方法，所以須查詢兩次
 		query := datastore.NewQuery("NTPCParkings").
-			Filter("CellStatus =", false). //false代表沒有車，但必須確認ParkingStatus必須為2或3才可停
 			Filter("ParkingStatus =", i).
 			Filter("Lat >", lat-rangeLat).
 			Filter("Lat <", lat+rangeLat)
-
+		if IsOnlyEmpty {
+			query.Filter("CellStatus =", false) //false代表沒有車，但必須確認ParkingStatus必須為2或3才可停
+		}
 		it := DatastoreProc.client.Run(DatastoreProc.ctx, query)
 
 		for {

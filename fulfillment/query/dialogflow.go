@@ -18,10 +18,12 @@ var DialogflowProc dialogflowProcessor
 
 // nlpResponse is webhook回應
 type nlpResponse struct {
-	Intent     string
-	Confidence float32
-	Entities   map[string]string
-	Prompts    string
+	Intent                   string
+	Confidence               float32
+	Entities                 map[string]string
+	Prompts                  string
+	Response                 string
+	AllRequiredParamsPresent bool
 }
 
 type dialogflowProcessor struct {
@@ -79,7 +81,8 @@ func (dp *dialogflowProcessor) ProcessNLP(rawMessage string, username string) (r
 		// This value is for informational purpose only and is only used to
 		// help match the best intent within the classification threshold.
 		r.Confidence = float32(queryResult.IntentDetectionConfidence)
-
+		r.Response = queryResult.GetFulfillmentText()
+		r.AllRequiredParamsPresent = queryResult.AllRequiredParamsPresent
 	}
 	r.Entities = make(map[string]string)
 	//The collection of extracted parameters.
@@ -122,10 +125,10 @@ func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 
 	case *structpb.Value_ListValue:
 		list := p.GetListValue()
-		if len(list.GetValues()) > 1 {
-			// @TODO: Extract more values
+		if len(list.GetValues()) == 1 {
+			extractedEntity = extractDialogflowEntities(list.GetValues()[0])
 		}
-		extractedEntity = extractDialogflowEntities(list.GetValues()[0])
+
 		return extractedEntity
 	default:
 		return ""

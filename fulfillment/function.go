@@ -46,25 +46,48 @@ func replyUser(resp interface{}, event *linebot.Event) {
 	switch resp.(type) { //確認是何種類型訊息
 	case string:
 		respMessg = linebot.NewTextMessage(resp.(string))
-	case []query.Parking:
-		parkings := resp.([]query.Parking)
-
-		var container *linebot.CarouselContainer
-
-		if parkings[0].Distance > 0 {
-			container = query.Carouselmesage(parkings, "加入最愛")
-		} else {
-			container = query.Carouselmesage(parkings, "移除")
-		}
-		respMessg = linebot.NewFlexMessage("車位資訊。", container)
 	case *linebot.BubbleContainer:
 		respMessg = linebot.NewFlexMessage("使用介紹", resp.(*linebot.BubbleContainer))
+	default:
+		var container *linebot.CarouselContainer
+		container = query.CreateCarouselmesage(resp)
+		respMessg = linebot.NewFlexMessage("車位資訊。", container)
 	}
 
 	if _, err = bot.ReplyMessage(event.ReplyToken, respMessg).Do(); err != nil {
-		log.Print(err)
+		log.Println(respMessg)
+		log.Print("ReplyMessage Error ", err)
 	}
 
+}
+
+func processByDialogflow(message string, UserID string) (resp interface{}) {
+
+	response := query.DialogflowProc.ProcessNLP(message, UserID) //解析使用者所傳文字
+
+	if response.Intent == "GetRoute" {
+		if response.AllRequiredParamsPresent {
+			lat, lon := query.GetGPS(response.Entities["destination"]) //路名轉GPS
+			result := query.GetParkingsByGPS(lat, lon, false)
+			route := query.RouteWithParkings{
+				Parkings: result,
+			}
+
+			route.Address.Original = response.Entities["original"]
+			route.Address.Destination = response.Entities["destination"]
+			if len(route.Parkings) == 0 {
+				resp = query.EmptyParkingBubbleMsg(route.Address)
+			} else {
+				resp = route //查詢車格資訊
+			}
+
+		} else {
+			resp = response.Prompts
+		}
+	} else {
+		resp = response.Response
+	}
+	return
 }
 
 //Fulfillment 查詢車位
@@ -96,31 +119,16 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 			//訊息種類
 			switch message := event.Message.(type) {
 			case *linebot.TextMessage: //文字訊息
-
-				response := query.DialogflowProc.ProcessNLP(message.Text, event.Source.UserID) //解析使用者所傳文字
-
-				if response.Intent == "FindParking" {
-					if _, ok := response.Entities["location"]; ok {
-						lat, lon := query.GetGPS(response.Entities["location"]) //路名轉GPS
-						resp = query.GetParkingsByGPS(lat, lon)                 //查詢車格資訊
-					} else {
-						resp = response.Prompts //如果偵測到intent卻沒有entity，回傳提示輸入訊息
-					}
-				} else {
-					resp = "我聽不太懂"
-				}
-
+				resp = processByDialogflow(message.Text, event.Source.UserID)
 			case *linebot.LocationMessage: //位置訊息
 				fmt.Printf("gps %f,%f\n", message.Latitude, message.Longitude)
-
-				parkings := query.GetParkingsByGPS(message.Latitude, message.Longitude)
+				parkings := query.GetParkingsByGPS(message.Latitude, message.Longitude, true)
 
 				if len(parkings) == 0 {
 					resp = "你附近沒有空車位哦 😢"
 				} else {
 					resp = parkings
 				}
-
 			}
 
 			//加好友事件
@@ -131,7 +139,8 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 			postbackData := event.Postback.Data
 			log.Println("UserID", UserID, "  ", postbackData)
 
-			if postbackData == "favor" {
+			switch postbackData {
+			case "favor":
 				parkings := query.GetParkingsByFavor(UserID)
 
 				if len(parkings) == 0 {
@@ -139,10 +148,13 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 				} else {
 					resp = parkings
 				}
-
-			} else if postbackData == "intro" {
+			case "intro":
 				resp = query.IntroBubbleMsg()
-			} else {
+			case "query":
+				resp = query.SearchBubbleMsg()
+			case "route":
+				resp = processByDialogflow("導航", event.Source.UserID)
+			default:
 				resp = query.UserFavorModify(UserID, postbackData)
 			}
 
