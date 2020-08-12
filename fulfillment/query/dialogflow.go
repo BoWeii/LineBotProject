@@ -115,12 +115,14 @@ func extractDialogflowEntities(p *structpb.Value) (extractedEntity string) {
 	case *structpb.Value_StructValue: //sys.location 為內建entity，回傳格式為struct，可以在dialogflow上輸入測試地址看完整結構
 		s := p.GetStructValue()
 		fields := s.GetFields()
-
-		// for key, value := range fields {
-		// 	log.Printf("key: %s, value: %s", key, value)
-		// 	// @TODO: Other entity types can be added here
-		// }
-		extractedEntity := fields["street-address"].GetStringValue() //取得地址這欄
+		var extractedEntity string
+		for _, value := range fields {
+			//log.Printf("key: %s, value: %s", key, value)
+			if value.String() != "" {
+				extractedEntity += value.GetStringValue()
+			}
+		}
+		//	extractedEntity := fields["street-address"].GetStringValue() //取得地址這欄
 		return extractedEntity
 
 	case *structpb.Value_ListValue:
