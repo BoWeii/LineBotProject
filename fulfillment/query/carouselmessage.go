@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/line/line-bot-sdk-go/linebot"
-
 )
 
 func getBubbleInfo(parking Parking) (component []linebot.FlexComponent) {
@@ -87,6 +86,105 @@ func getBubbleInfo(parking Parking) (component []linebot.FlexComponent) {
 	}
 	return
 }
+func getFeeBubbleInfo(info FeeInfo) (component []linebot.FlexComponent) {
+	component = []linebot.FlexComponent{
+		&linebot.TextComponent{
+			Type:   linebot.FlexComponentTypeText,
+			Text:   string(info.AmountTicket) + "元",
+			Size:   linebot.FlexTextSizeTypeXl,
+			Weight: linebot.FlexTextWeightTypeBold,
+		},
+		&linebot.BoxComponent{
+			Type:   linebot.FlexComponentTypeBox,
+			Layout: linebot.FlexBoxLayoutTypeBaseline,
+			Contents: []linebot.FlexComponent{
+				&linebot.TextComponent{
+					Type:  linebot.FlexComponentTypeText,
+					Text:  "停車日期",
+					Color: "#aaaaaa",
+				},
+				&linebot.TextComponent{
+					Type: linebot.FlexComponentTypeText,
+					Text: info.Parkdt,
+				},
+			},
+		},
+		&linebot.BoxComponent{
+			Type:   linebot.FlexComponentTypeBox,
+			Layout: linebot.FlexBoxLayoutTypeBaseline,
+			Contents: []linebot.FlexComponent{
+				&linebot.TextComponent{
+					Type:  linebot.FlexComponentTypeText,
+					Text:  "截止日期",
+					Color: "#aaaaaa",
+				},
+				&linebot.TextComponent{
+					Type: linebot.FlexComponentTypeText,
+					Text: info.Paylim,
+				},
+			},
+		},
+		&linebot.BoxComponent{
+			Type:   linebot.FlexComponentTypeBox,
+			Layout: linebot.FlexBoxLayoutTypeBaseline,
+			Contents: []linebot.FlexComponent{
+				&linebot.TextComponent{
+					Type:  linebot.FlexComponentTypeText,
+					Text:  "車牌",
+					Color: "#aaaaaa",
+				},
+				&linebot.TextComponent{
+					Type: linebot.FlexComponentTypeText,
+					Text: info.CarID,
+					Wrap: true,
+				},
+			},
+		},
+	}
+
+	// distComp := &linebot.BoxComponent{
+	// 	Type:   linebot.FlexComponentTypeBox,
+	// 	Layout: linebot.FlexBoxLayoutTypeBaseline,
+	// 	Contents: []linebot.FlexComponent{
+	// 		&linebot.TextComponent{
+	// 			Type:  linebot.FlexComponentTypeText,
+	// 			Text:  "TicketNo ",
+	// 			Color: "#aaaaaa",
+	// 		},
+	// 		&linebot.TextComponent{
+	// 			Type: linebot.FlexComponentTypeText,
+	// 			Text: info.TicketNo,
+	// 		},
+	// 	},
+	// }
+	return
+}
+func getFeeInfoContainer(info FeeInfo) (container *linebot.BubbleContainer) {
+	container = &linebot.BubbleContainer{
+		Type: linebot.FlexContainerTypeBubble,
+
+		Hero: &linebot.ImageComponent{
+			Type: linebot.FlexComponentTypeImage,
+			URL:  "https://upload.cc/i1/2020/08/11/AKUjRz.png",
+			Size: linebot.FlexImageSizeType3xl,
+		},
+		Styles: &linebot.BubbleStyle{
+			Hero: &linebot.BlockStyle{
+				BackgroundColor: "#d7b082",
+			},
+		},
+		Body: &linebot.BoxComponent{
+			Type:     linebot.FlexComponentTypeBox,
+			Layout:   linebot.FlexBoxLayoutTypeVertical,
+			Spacing:  linebot.FlexComponentSpacingTypeSm,
+			Contents: getFeeBubbleInfo(info),
+		},
+		Size: linebot.FlexBubbleSizeTypeKilo,
+	}
+
+	return
+}
+
 func createBubbleContainer(parking Parking, action string, route ...address) (container *linebot.BubbleContainer) {
 	var uri string
 	if len(route) != 0 {
@@ -156,7 +254,8 @@ func createBubbleContainer(parking Parking, action string, route ...address) (co
 func CreateCarouselmesage(info interface{}) (container *linebot.CarouselContainer) {
 	var bubbleConts []*linebot.BubbleContainer
 	var parkings []Parking
-	var action string
+	var feeInfos []FeeInfo
+	var action string	
 	var route address
 	switch info.(type) {
 	case []Parking:
@@ -166,18 +265,25 @@ func CreateCarouselmesage(info interface{}) (container *linebot.CarouselContaine
 		} else {
 			action = "加入最愛"
 		}
+	case []FeeInfo:
+		feeInfos = info.([]FeeInfo)
+
 	case RouteWithParkings:
 		routeWithParkings := info.(RouteWithParkings)
 		parkings = routeWithParkings.Parkings
 		route = routeWithParkings.Address
 		action = "加入最愛"
 	}
+
 	for _, parking := range parkings {
 		if route == (address{}) {
 			bubbleConts = append(bubbleConts, createBubbleContainer(parking, action))
 		} else {
 			bubbleConts = append(bubbleConts, createBubbleContainer(parking, action, route))
 		}
+	}
+	for _, feeInfo := range feeInfos {
+		bubbleConts = append(bubbleConts, getFeeInfoContainer(feeInfo))
 	}
 	container = &linebot.CarouselContainer{
 		Type:     linebot.FlexContainerTypeCarousel,

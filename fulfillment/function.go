@@ -1,14 +1,19 @@
 package fulfillment
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"strings"
 	"net/http"
-
+	"reflect"
+	"strconv"
 	//"cloud.google.com/go/datastore"
 	//dialogflow "cloud.google.com/go/dialogflow/apiv2"
 	//structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/line/line-bot-sdk-go/linebot"
+	"github.com/thedevsaddam/gojsonq"
 	"project.com/fulfillment/query"
 	//"google.golang.org/api/option"
 	//dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
@@ -24,6 +29,9 @@ const projectID string = "parkingproject-2-283415"
 var bot *linebot.Client
 
 var err error
+
+const FeeURL string = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-95FE-99BB8DB5BCA0/json"
+
 
 //response webhook回應
 // type response struct {
@@ -41,7 +49,6 @@ func init() {
 }
 
 func replyUser(resp interface{}, event *linebot.Event) {
-
 	var respMessg linebot.SendingMessage
 	switch resp.(type) { //確認是何種類型訊息
 	case string:
@@ -64,7 +71,6 @@ func replyUser(resp interface{}, event *linebot.Event) {
 func processByDialogflow(message string, UserID string) (resp interface{}) {
 
 	response := query.DialogflowProc.ProcessNLP(message, UserID) //解析使用者所傳文字
-
 	if response.Intent == "GetRoute" {
 		if response.AllRequiredParamsPresent {
 			lat, lon := query.GetGPS(response.Entities["destination"]) //路名轉GPS
@@ -78,7 +84,36 @@ func processByDialogflow(message string, UserID string) (resp interface{}) {
 			if len(route.Parkings) == 0 {
 				resp = query.EmptyParkingBubbleMsg(route.Address)
 			} else {
+				log.Print(reflect.TypeOf(route))
 				resp = route //查詢車格資訊
+			}
+
+		} else {
+			resp = response.Prompts
+		}
+	} else if response.Intent == "GetFee" {
+		if response.AllRequiredParamsPresent {
+			var result []query.FeeInfo
+			for i := 0; i <= 100; i++ {
+				resp2, err := http.Get(FeeURL + "?page=" + strconv.Itoa(i) + "&size=1000")
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer resp2.Body.Close()
+				body, _ := ioutil.ReadAll(resp2.Body)
+				bodyStr := "{\"Fee\":" + string(body) + "}"
+				bodyStr=strings.ReplaceAll(bodyStr,"Amount_Ticket","AmountTicket")
+				jq := gojsonq.New().JSONString(string(bodyStr)) //gojsonq解析json
+				feeInfo:=jq.From("Fee").WhereContains("CarID", message).Get()			
+				feeString, err := json.Marshal(feeInfo)
+				var  temp []query.FeeInfo
+				json.Unmarshal([]byte(feeString), &temp)
+				result=append(result,temp...)
+			}
+			if(len(result)==0){
+				resp="尚無此紀錄 😢"
+			}else{
+				resp=result
 			}
 
 		} else {
@@ -87,6 +122,7 @@ func processByDialogflow(message string, UserID string) (resp interface{}) {
 	} else {
 		resp = response.Response
 	}
+	
 	return
 }
 
@@ -154,6 +190,8 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 				resp = query.SearchBubbleMsg()
 			case "route":
 				resp = processByDialogflow("導航", event.Source.UserID)
+			case "fee":
+				resp = processByDialogflow("車費", event.Source.UserID)
 			default:
 				resp = query.UserFavorModify(UserID, postbackData)
 			}

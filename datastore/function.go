@@ -124,55 +124,6 @@ func getParkingInfo(url string) (*string, error) {
 	}
 	data = data[:len(data)-1]
 	data += "]"
-	// data = strings.ReplaceAll(data, "\"CELLSTATUS\""+":"+"\"Y\"", "\"CELLSTATUS\""+":"+"\"true\"")
-	// data = strings.ReplaceAll(data, "\"CELLSTATUS\""+":"+"\"N\"", "\"CELLSTATUS\""+":"+"\"false\"")
-
-	// fmt.Printf(data)
-
-	// var temp string
-	// temp=url+"?page="+"0"+"&size=1000"
-	// // fmt.Printf("################# %s",temp)
-
-	// resp, err := http.Get(temp)
-	// if err != nil {
-	// 		return nil, err
-	// }
-
-	// var data string ?page=1&size=30900
-	// if strings.Contains(url, ".gz") {
-	// 	reader, err := gzip.NewReader(resp.Body)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	defer reader.Close()
-
-	// 	body, err := ioutil.ReadAll(reader)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-
-	// 	var xml = strings.NewReader(string(body))
-	// 	json, err := xml2json.Convert(xml)
-	// 	if err != nil {
-	// 		log.Print("Failed to convert xml to json")
-	// 	}
-
-	// 	data = json.String()
-	// } else {
-	// 	body, err := ioutil.ReadAll(resp.Body)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-
-	// 	data = string(body)
-	// 	data = strings.ReplaceAll(data, "\"CELLSTATUS\""+":"+"\"Y\"", "\"CELLSTATUS\""+":"+"\"true\"")
-	// 	data = strings.ReplaceAll(data, "\"CELLSTATUS\""+":"+"\"N\"", "\"CELLSTATUS\""+":"+"\"false\"")
-	// 	fmt.Print()
-	// }
-
-	// defer resp.Body.Close()
-	// var tt string
-	// tt = "123"
 	return &data, nil
 }
 

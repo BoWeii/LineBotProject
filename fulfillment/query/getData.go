@@ -29,6 +29,16 @@ type RouteWithParkings struct {
 	Parkings []Parking
 }
 
+//FeeInfo 繳費資訊
+type FeeInfo struct {
+	TicketNo     string //收費編號
+	CarID        string //車牌號碼
+	Parkdt       string //開單日
+	Paylim       string //繳費截止日
+	AmountTicket string //費用
+	CarType      string //車種
+}
+
 //Parking 停車格
 type Parking struct {
 	ID            int     //車格序號
