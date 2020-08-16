@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/line/line-bot-sdk-go/linebot"
+
 )
 
 func getBubbleInfo(parking Parking) (component []linebot.FlexComponent) {
@@ -159,18 +160,18 @@ func getFeeBubbleInfo(info FeeInfo) (component []linebot.FlexComponent) {
 	// }
 	return
 }
-func getFeeInfoContainer(info FeeInfo) (container *linebot.BubbleContainer) {
+func createFeeInfoContainer(info FeeInfo) (container *linebot.BubbleContainer) {
 	container = &linebot.BubbleContainer{
 		Type: linebot.FlexContainerTypeBubble,
 
 		Hero: &linebot.ImageComponent{
 			Type: linebot.FlexComponentTypeImage,
-			URL:  "https://upload.cc/i1/2020/08/11/AKUjRz.png",
+			URL:  "https://upload.cc/i1/2020/08/16/eBihZU.png",
 			Size: linebot.FlexImageSizeType3xl,
 		},
 		Styles: &linebot.BubbleStyle{
 			Hero: &linebot.BlockStyle{
-				BackgroundColor: "#d7b082",
+				BackgroundColor: "#00CCB2",
 			},
 		},
 		Body: &linebot.BoxComponent{
@@ -255,7 +256,7 @@ func CreateCarouselmesage(info interface{}) (container *linebot.CarouselContaine
 	var bubbleConts []*linebot.BubbleContainer
 	var parkings []Parking
 	var feeInfos []FeeInfo
-	var action string	
+	var action string
 	var route address
 	switch info.(type) {
 	case []Parking:
@@ -283,12 +284,14 @@ func CreateCarouselmesage(info interface{}) (container *linebot.CarouselContaine
 		}
 	}
 	for _, feeInfo := range feeInfos {
-		bubbleConts = append(bubbleConts, getFeeInfoContainer(feeInfo))
+		bubbleConts = append(bubbleConts, createFeeInfoContainer(feeInfo))
 	}
+
 	container = &linebot.CarouselContainer{
 		Type:     linebot.FlexContainerTypeCarousel,
 		Contents: bubbleConts,
 	}
+
 	return
 }
 
@@ -355,12 +358,12 @@ func SearchBubbleMsg() (container *linebot.BubbleContainer) {
 
 		Hero: &linebot.ImageComponent{
 			Type: linebot.FlexComponentTypeImage,
-			URL:  "https://upload.cc/i1/2020/08/11/54dLJe.png",
+			URL:  "https://upload.cc/i1/2020/08/16/8dsYrK.png",
 			Size: linebot.FlexImageSizeType3xl,
 		},
 		Styles: &linebot.BubbleStyle{
 			Hero: &linebot.BlockStyle{
-				BackgroundColor: "#ccd2e8",
+				BackgroundColor: "#ECEE9F",
 			},
 		},
 		Body: &linebot.BoxComponent{

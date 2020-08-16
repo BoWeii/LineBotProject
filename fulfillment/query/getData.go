@@ -12,6 +12,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"github.com/thedevsaddam/gojsonq"
 	"google.golang.org/api/iterator"
+
 )
 
 const rangeLon float64 = 0.009
@@ -175,11 +176,6 @@ func GetParkingsByFavor(userID string) (result []Parking) {
 	}
 
 	return parkingList
-}
-
-//GetParkingByRoute
-func GetParkingByRoute() {
-
 }
 
 // GetParkingsByGPS  以GPS找車位資料
