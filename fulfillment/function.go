@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -47,9 +46,6 @@ func init() {
 	bot, err = linebot.New("57cc60c3fc1530cc32ba896e1c4b7856", "GiKIwKk+Lwku0WeGEGnlEDBDDGC67tQVCSIMbcQaKpA2IyZPU6OgVSIdI0h1HUUG2Ky/psNLEEkjfnEZGITnJolxlEScGgLoWT/iKpwyinf/IJDgeB5gnIB0zmuag0vYlcs7WgOYdUg0CwbGXlWKIwdB04t89/1O/w1cDnyilFU=")
 	query.DialogflowProc.Init(projectID, "parkingproject-2-283415-746d5d4c4c37.json", "zh-TW", "Asia/Hong_Kong")
 
-	if _, err := os.Open("parkingproject-2-283415-746d5d4c4c37.json"); err != nil {
-		log.Println("failed opening file: %s", err)
-	}
 	query.DatastoreProc.Init(projectID)
 
 }
