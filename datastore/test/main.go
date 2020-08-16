@@ -9,7 +9,7 @@ import (
 
 //main 測試function執行
 func main() {
-	// linebotProject.UpdateParkingInfo(context.Background(), linebotProject.PubSubMessage{Data: []byte("update")})
+	//datastore.UpdateParkingInfo(context.Background(), datastore.PubSubMessage{Data: []byte("update")})
 	//table.GpsToRoadName()
 	table.UploadRoads(context.Background())
 }

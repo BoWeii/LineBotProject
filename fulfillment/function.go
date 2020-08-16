@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"strings"
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
+
 	//"cloud.google.com/go/datastore"
 	//dialogflow "cloud.google.com/go/dialogflow/apiv2"
 	//structpb "github.com/golang/protobuf/ptypes/struct"
@@ -18,6 +19,7 @@ import (
 	//"google.golang.org/api/option"
 	//dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 	//"project.com/fulfillment/carouselmessage"
+
 )
 
 // dialogflowProcessor has all the information for connecting with Dialogflow
@@ -32,7 +34,6 @@ var err error
 
 const FeeURL string = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-95FE-99BB8DB5BCA0/json"
 
-
 //response webhook回應
 // type response struct {
 // 	FulfillmentText string `json:"fulfillmentText"`
@@ -43,7 +44,8 @@ const FeeURL string = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-
 // init 初始化權限
 func init() {
 	bot, err = linebot.New("57cc60c3fc1530cc32ba896e1c4b7856", "GiKIwKk+Lwku0WeGEGnlEDBDDGC67tQVCSIMbcQaKpA2IyZPU6OgVSIdI0h1HUUG2Ky/psNLEEkjfnEZGITnJolxlEScGgLoWT/iKpwyinf/IJDgeB5gnIB0zmuag0vYlcs7WgOYdUg0CwbGXlWKIwdB04t89/1O/w1cDnyilFU=")
-	query.DialogflowProc.Init(projectID, "parkingproject-key.json", "zh-TW", "Asia/Hong_Kong")
+	err := query.DialogflowProc.Init(projectID, "parkingproject-key.json", "zh-TW", "Asia/Hong_Kong")
+	log.Println(err)
 	query.DatastoreProc.Init(projectID)
 
 }
@@ -102,18 +104,18 @@ func processByDialogflow(message string, UserID string) (resp interface{}) {
 				defer resp2.Body.Close()
 				body, _ := ioutil.ReadAll(resp2.Body)
 				bodyStr := "{\"Fee\":" + string(body) + "}"
-				bodyStr=strings.ReplaceAll(bodyStr,"Amount_Ticket","AmountTicket")
+				bodyStr = strings.ReplaceAll(bodyStr, "Amount_Ticket", "AmountTicket")
 				jq := gojsonq.New().JSONString(string(bodyStr)) //gojsonq解析json
-				feeInfo:=jq.From("Fee").WhereContains("CarID", message).Get()			
+				feeInfo := jq.From("Fee").WhereContains("CarID", message).Get()
 				feeString, err := json.Marshal(feeInfo)
-				var  temp []query.FeeInfo
+				var temp []query.FeeInfo
 				json.Unmarshal([]byte(feeString), &temp)
-				result=append(result,temp...)
+				result = append(result, temp...)
 			}
-			if(len(result)==0){
-				resp="尚無此紀錄 😢"
-			}else{
-				resp=result
+			if len(result) == 0 {
+				resp = "尚無此紀錄 😢"
+			} else {
+				resp = result
 			}
 
 		} else {
@@ -122,7 +124,7 @@ func processByDialogflow(message string, UserID string) (resp interface{}) {
 	} else {
 		resp = response.Response
 	}
-	
+
 	return
 }
 

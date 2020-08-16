@@ -75,7 +75,7 @@ func GpsToRoadName() {
 
 			/*geocoding gps 轉路名*/
 
-			geo := "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + fmt.Sprintf("%f", road.Lat) + "," + fmt.Sprintf("%f", road.Lon) + "&result_type=route&language=zh-tw&key=AIzaSyAhsij-kCTyOzK9Vq83zemmxJXTdNJVkV8"
+			geo := "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + fmt.Sprintf("%f", road.Lat) + "," + fmt.Sprintf("%f", road.Lon) + "&result_type=route&language=zh-tw&key=AIzaSyDOa8n59m_dBNvGW_uqIcEKLT8asSQ680U"
 			resp, _ := http.Get(geo)
 			body, _ := ioutil.ReadAll(resp.Body)
 			jq := gojsonq.New().FromString(string(body))

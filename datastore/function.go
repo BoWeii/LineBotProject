@@ -5,7 +5,6 @@ import (
 	// "bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"math"
@@ -96,7 +95,7 @@ func putParkingInfo(ctx context.Context, roadKeys []*datastore.Key, parkings int
 		tmp = size - 1
 	}
 
-	fmt.Printf("Info Saved sucess")
+	log.Println("Info Saved sucess")
 
 }
 
