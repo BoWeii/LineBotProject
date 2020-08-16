@@ -48,7 +48,7 @@ func init() {
 	query.DialogflowProc.Init(projectID, "parkingproject-2-283415-746d5d4c4c37.json", "zh-TW", "Asia/Hong_Kong")
 
 	if _, err := os.Open("parkingproject-2-283415-746d5d4c4c37.json"); err != nil {
-		log.Fatalf("failed opening file: %s", err)
+		log.Println("failed opening file: %s", err)
 	}
 	query.DatastoreProc.Init(projectID)
 
