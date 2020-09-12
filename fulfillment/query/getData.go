@@ -17,7 +17,7 @@ import (
 
 const rangeLon float64 = 0.009
 const rangeLat float64 = 0.008
-const googleMapAPIKey string = "AIzaSyDOa8n59m_dBNvGW_uqIcEKLT8asSQ680U"
+const googleMapAPIKey string = "AIzaSyCzGP7dIwrOEuWxN8w40tBvwA_rvnbqudE"
 
 type address struct {
 	Original    string

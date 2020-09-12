@@ -1,0 +1,13 @@
+{
+    "type": "service_account",
+    "project_id": "exalted-yeti-289303",
+    "private_key_id": "753a4c88e472a80fbc4ca710f971cadf844c6394",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCLsRTDxp2mRbqL\ngfzqyyevM2G48pOAiQ8h+8Ag4DceO0M1XOwiNn3S9y6U2NQcn71L0kxCpD0QhdyX\nZFyMgLWoPaDYqfjUx6Wi+lnIvya29+ugVz/7ILnyAYpek46KxIL0D3ZyY3JHmB/b\nS6W+P5paG3wxd23NyqslG1Dw2jLKDI5Qx6H5jpCHgazw9A2QpEjxvAE+nXzTyf7C\n/BvHxMeWjOsOE1oN65+vi2kbW9/7H0qhnut5dZ5GJNgPVMVa0w63BT/nbRRUnv2V\nrkSQOFzoNQFRsg6vWdHQdhr8ojLGmrB8Goe7HlnkP8yUKSoSBGImuLuSgHiPQ5dR\nSo56NPNlAgMBAAECggEAHN+LNTQWXcnH1xIVHsrC9xmdt0acalLqB9IrUiBGBD+n\nkp4USLYOp85jmGyA2zHBRKzBCn08CfBBOiGKZ5gq9A1Y86+eOQzTFa69ZBrue58e\n2tNt7BBFntnmqcnCCri3gI65oscfVeEBpKgsJ/iphLptnyPaVFDxswfEYSQYn15O\nyq7bMAx4CMQIqSWSgNsxuiTPOo3+ihyV2r8tOwJZmSKB4sWOmmiJLceylfWiaCkz\nwEK3Li81WbKMVOPElfP/G6l1MLnH28IvBQdbGrmfNTQxIkCN+QvD6X6AWygBsM2o\nyGYG5qgCfmIMDqOfS63pqfCunYyLLJvKuR28XtBlQQKBgQDD+6i/MYAKtY/vN2mC\nUM6mz4YxgwvzbBfLgDN2qUROFgvJycKUv0V+1DcV+qvXHoqnvsYG/gBRfiQXHnj2\nkxHOzKjjdYevTYSIgiE/xvPgflak4M1lHFtWXz+PHOsFzFwzQ6k/z7HSjacv09S9\nJ7IbqAxuVHAuQ8oWwm3RhY1SGQKBgQC2eGRcBIA3BwxJGSndkDwXINbgfSRu+5zi\nH3/izPGNWu6b5Pa/8NCewMd8VUJg0ccsNpjMk9R7XjXvBrQXxZblljay9YZv7Aow\nmlQOTz6g8qFGSJHOjB60ffsOeC6smmcg/o9OGv5KXTNOw0i1pnPjsiVuWS4ZNl2V\nLZn/gYxNLQKBgEUhJuPSBRVB9/RselYSROKIPxCF5hhGH5qTrROFH2ff1OanuXAY\ni93x40BofGbUChqja1yaCei08uwIvqhTNivY+xXIpkTKth4ksK+7cNjWF5/u/+RT\nfVBZJqVHkQspi7g1fKTakSHw/3EaamcScnvY6hGczTk0hjtC99O5JSE5AoGAV1SL\ng9bLnoqLALlAZkBP4infbZW3SD64OSkmReAcg7DPnmEZD4gr8K8HSqRrnncIQkrn\nGpJuEZVnbrzgmLgCnmMkTsZfz1VDEzvpmuema9V0BnVZA2fgkjXxYF14yTckwI/U\n+mbE6cZtdfbU58uAj6uFaqjX/U0dwPYQTE8uXQkCgYBl030qm90GGRr9qUE94xPq\n0MtTgabfyujvzbrPxB1QO1/N4sBbK78iX4+5nXk1k6Uu4vf6YVi1ON/DhF7Ukkfn\n2GEN9pf4uWFKcaEaw7/yXXesLjza1dokaTfFJAqLN7JBpoJUh20QpEWeQpLKT+26\nCGqXTskGpYk33ReCO9junA==\n-----END PRIVATE KEY-----\n",
+    "client_email": "dialogflow@exalted-yeti-289303.iam.gserviceaccount.com",
+    "client_id": "109523558446951167395",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dialogflow%40exalted-yeti-289303.iam.gserviceaccount.com"
+  }
+  
