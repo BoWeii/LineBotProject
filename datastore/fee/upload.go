@@ -88,7 +88,7 @@ func putFeeInfo(ctx context.Context, feeKeys []*datastore.Key, fees *Fees) {
 func getParkingInfo(url string) (*string, error) {
 	var data string
 	data = "["
-	for i := 0; i <= 30; i++ {
+	for i := 0; i <= 40; i++ {
 
 		resp, err := http.Get(url + "?page=" + strconv.Itoa(i) + "&size=1000")
 		if err != nil {
@@ -100,8 +100,11 @@ func getParkingInfo(url string) (*string, error) {
 			log.Fatal(err)
 		}
 		temp := string(body)
+		
+		temp = strings.Replace(temp, " ", "", -1)
 		temp = strings.Replace(temp, "[", "", -1)
 		temp = strings.Replace(temp, "]", "", -1)
+		temp = strings.Replace(temp, "Amount_Ticket", "AmountTicket", -1)
 		data = data + temp + ","
 	}
 	data = data[:len(data)-1]

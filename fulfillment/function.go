@@ -91,29 +91,11 @@ func processByDialogflow(message string, UserID string) (resp interface{}) {
 	} else if response.Intent == "GetFee" {
 		if response.AllRequiredParamsPresent {
 			result := query.GetFeeInfo(message)
-			// var result []query.FeeInfo
-			// for i := 0; i <= 100; i++ {
-			// 	resp2, err := http.Get(FeeURL + "?page=" + strconv.Itoa(i) + "&size=1000")
-			// 	if err != nil {
-			// 		log.Fatal(err)
-			// 	}
-			// 	defer resp2.Body.Close()
-			// 	body, _ := ioutil.ReadAll(resp2.Body)
-			// 	bodyStr := "{\"Fee\":" + string(body) + "}"
-			// 	bodyStr = strings.ReplaceAll(bodyStr, "Amount_Ticket", "AmountTicket")
-			// 	jq := gojsonq.New().JSONString(string(bodyStr)) //gojsonq解析json
-			// 	feeInfo := jq.From("Fee").WhereContains("CarID", message).Get()
-			// 	feeString, err := json.Marshal(feeInfo)
-			// 	var temp []query.FeeInfo
-			// 	json.Unmarshal([]byte(feeString), &temp)
-			// 	result = append(result, temp...)
-			//}
 			if len(result) == 0 {
 				resp = "尚無此紀錄 😢"
 			} else {
 				resp = result
 			}
-
 		} else {
 			resp = response.Prompts
 		}

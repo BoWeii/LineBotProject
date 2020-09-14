@@ -12,7 +12,6 @@ import (
 	"cloud.google.com/go/datastore"
 	"github.com/thedevsaddam/gojsonq"
 	"google.golang.org/api/iterator"
-
 )
 
 const rangeLon float64 = 0.009
@@ -144,17 +143,19 @@ func getUserFavor(userID string) (favor []string) {
 }
 
 //GetFeeInfo get fee info
-func GetFeeInfo(carID string)(fees []FeeInfo){
+func GetFeeInfo(carID string) (fees []FeeInfo) {
+	var temp FeeInfo
 	query := datastore.NewQuery("NTPCFeeInfo").
-				Filter("CarID=", carID)
+		Filter("CarID=", carID)
 	it := DatastoreProc.client.Run(DatastoreProc.ctx, query)
-	for{
-		_,err:=it.Next(&fees)
-		if err == iterator.Done{
+	for {
+		_, err := it.Next(&temp)
+		if err == iterator.Done {
 			break
-		}else if err != nil {
+		} else if err != nil {
 			log.Fatalf("Error fetching fee info: %v", err)
 		}
+		fees = append(fees, temp)
 	}
 	return
 }
