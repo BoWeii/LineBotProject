@@ -104,8 +104,10 @@ func getMapDist(userLat float64, userLon float64, lat float64, lon float64) (dis
 func GetGPS(roadName string) (lat float64, lon float64) {
 
 	geocoding := "https://maps.googleapis.com/maps/api/geocode/json?address=" + roadName + "&key=" + googleMapAPIKey
+	log.Print(geocoding)
 	resp, _ := http.Get(geocoding)
 	body, _ := ioutil.ReadAll(resp.Body)
+	log.Print(string(body))
 	jq := gojsonq.New().FromString(string(body))    //gojsonq解析json
 	res := jq.Find("results.[0].geometry.location") //可以直接點網址了解json結構
 	gps := res.(map[string]interface{})             //interface型態轉回map
@@ -139,6 +141,22 @@ func getUserFavor(userID string) (favor []string) {
 		log.Fatalf("Error fetching favor road: %v", err)
 	}
 	return favorRoads.RoadID
+}
+
+//GetFeeInfo get fee info
+func GetFeeInfo(carID string)(fees []FeeInfo){
+	query := datastore.NewQuery("NTPCFeeInfo").
+				Filter("CarID=", carID)
+	it := DatastoreProc.client.Run(DatastoreProc.ctx, query)
+	for{
+		_,err:=it.Next(&fees)
+		if err == iterator.Done{
+			break
+		}else if err != nil {
+			log.Fatalf("Error fetching fee info: %v", err)
+		}
+	}
+	return
 }
 
 //GetParkingsByFavor 以 favor 查車格

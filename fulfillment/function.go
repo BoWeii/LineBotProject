@@ -1,25 +1,20 @@
 package fulfillment
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"reflect"
-	"strconv"
-	"strings"
 
 	//"cloud.google.com/go/datastore"
 	//dialogflow "cloud.google.com/go/dialogflow/apiv2"
 	//structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/line/line-bot-sdk-go/linebot"
-	"github.com/thedevsaddam/gojsonq"
+	// "github.com/thedevsaddam/gojsonq"
 	"project.com/fulfillment/query"
 	//"google.golang.org/api/option"
 	//dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 	//"project.com/fulfillment/carouselmessage"
-
 )
 
 // dialogflowProcessor has all the information for connecting with Dialogflow
@@ -44,7 +39,7 @@ const FeeURL string = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-
 // init 初始化權限
 func init() {
 	bot, err = linebot.New("57cc60c3fc1530cc32ba896e1c4b7856", "GiKIwKk+Lwku0WeGEGnlEDBDDGC67tQVCSIMbcQaKpA2IyZPU6OgVSIdI0h1HUUG2Ky/psNLEEkjfnEZGITnJolxlEScGgLoWT/iKpwyinf/IJDgeB5gnIB0zmuag0vYlcs7WgOYdUg0CwbGXlWKIwdB04t89/1O/w1cDnyilFU=")
-	query.DialogflowProc.Init(projectID, "parkingproject-2-283415-746d5d4c4c37.json", "zh-TW", "Asia/Hong_Kong")
+	query.DialogflowProc.Init(projectID, "exalted-yeti-289303-753a4c88e472.json", "zh-TW", "Asia/Hong_Kong")
 
 	query.DatastoreProc.Init(projectID)
 
@@ -95,23 +90,24 @@ func processByDialogflow(message string, UserID string) (resp interface{}) {
 		}
 	} else if response.Intent == "GetFee" {
 		if response.AllRequiredParamsPresent {
-			var result []query.FeeInfo
-			for i := 0; i <= 100; i++ {
-				resp2, err := http.Get(FeeURL + "?page=" + strconv.Itoa(i) + "&size=1000")
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer resp2.Body.Close()
-				body, _ := ioutil.ReadAll(resp2.Body)
-				bodyStr := "{\"Fee\":" + string(body) + "}"
-				bodyStr = strings.ReplaceAll(bodyStr, "Amount_Ticket", "AmountTicket")
-				jq := gojsonq.New().JSONString(string(bodyStr)) //gojsonq解析json
-				feeInfo := jq.From("Fee").WhereContains("CarID", message).Get()
-				feeString, err := json.Marshal(feeInfo)
-				var temp []query.FeeInfo
-				json.Unmarshal([]byte(feeString), &temp)
-				result = append(result, temp...)
-			}
+			result := query.GetFeeInfo(message)
+			// var result []query.FeeInfo
+			// for i := 0; i <= 100; i++ {
+			// 	resp2, err := http.Get(FeeURL + "?page=" + strconv.Itoa(i) + "&size=1000")
+			// 	if err != nil {
+			// 		log.Fatal(err)
+			// 	}
+			// 	defer resp2.Body.Close()
+			// 	body, _ := ioutil.ReadAll(resp2.Body)
+			// 	bodyStr := "{\"Fee\":" + string(body) + "}"
+			// 	bodyStr = strings.ReplaceAll(bodyStr, "Amount_Ticket", "AmountTicket")
+			// 	jq := gojsonq.New().JSONString(string(bodyStr)) //gojsonq解析json
+			// 	feeInfo := jq.From("Fee").WhereContains("CarID", message).Get()
+			// 	feeString, err := json.Marshal(feeInfo)
+			// 	var temp []query.FeeInfo
+			// 	json.Unmarshal([]byte(feeString), &temp)
+			// 	result = append(result, temp...)
+			//}
 			if len(result) == 0 {
 				resp = "尚無此紀錄 😢"
 			} else {
