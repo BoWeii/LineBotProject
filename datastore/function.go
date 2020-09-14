@@ -17,7 +17,6 @@ import (
 	"cloud.google.com/go/datastore"
 	// xml2json "github.com/basgys/goxml2json"
 	parking "project.com/datastore/parkingstruct"
-
 )
 
 const projectID string = "exalted-yeti-289303"
@@ -95,7 +94,7 @@ func putParkingInfo(ctx context.Context, roadKeys []*datastore.Key, parkings int
 		tmp = size - 1
 	}
 
-	log.Println("Info Saved sucess")
+	log.Println("Road Info Saved sucess")
 
 }
 

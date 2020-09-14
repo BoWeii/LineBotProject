@@ -36,6 +36,8 @@ type Parking struct {
 var DatastoreProc datastoreProcessor
 
 const projectID string = "exalted-yeti-289303"
+const googleMapAPIKey string = "AIzaSyCzGP7dIwrOEuWxN8w40tBvwA_rvnbqudE"
+
 
 type datastoreProcessor struct {
 	projectID string
@@ -75,10 +77,11 @@ func GpsToRoadName() {
 
 			/*geocoding gps 轉路名*/
 
-			geo := "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + fmt.Sprintf("%f", road.Lat) + "," + fmt.Sprintf("%f", road.Lon) + "&result_type=route&language=zh-tw&key=AIzaSyDOa8n59m_dBNvGW_uqIcEKLT8asSQ680U"
+			geo := "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + fmt.Sprintf("%f", road.Lat) + "," + fmt.Sprintf("%f", road.Lon) + "&result_type=route&language=zh-tw&key="+googleMapAPIKey
 			resp, _ := http.Get(geo)
 			body, _ := ioutil.ReadAll(resp.Body)
 			jq := gojsonq.New().FromString(string(body))
+			// log.Print(string(body))
 			res := jq.From("results.[0].address_components").Where("types.[0]", "=", "route").Get()
 
 			fmt.Printf("RoadID %s ,%f ,%f ", road.RoadID, road.Lat, road.Lon)

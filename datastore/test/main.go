@@ -3,15 +3,18 @@ package main
 import (
 	"context"
 
-	"project.com/datastore/table"
-
+	// "project.com/datastore"
+	// "project.com/datastore/table"
+	"project.com/datastore/fee"
 )
 
 //main 測試function執行
 func main() {
-	//datastore.UpdateParkingInfo(context.Background(), datastore.PubSubMessage{Data: []byte("update")})
-	//table.GpsToRoadName()
-	table.UploadRoads(context.Background())
+	// datastore.UpdateParkingInfo(context.Background(), datastore.PubSubMessage{Data: []byte("update")})
+	// table.GpsToRoadName()
+	// table.UploadRoads(context.Background())
+	fee.UpdateFeeInfo(context.Background())
+
 }
 
 //部署指令
