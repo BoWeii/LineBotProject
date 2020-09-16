@@ -1,7 +1,6 @@
 indexes:
   - kind: NTPCParkings
-    ancestor: no
     properties:
-      - name: CellStatus
-      - name: ParkingStatus
+      - name: RoadID
       - name: Lat
+      - name: Lon

@@ -28,8 +28,8 @@ const FeeURL string = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-
 const projectID string = "exalted-yeti-289303"
 
 
-//UpdateParkingInfo consumes a Pub/Sub message 並更新停車位資訊
-func UpdateFeeInfo(ctx context.Context) error {
+//Update 更新停車費資訊
+func Update(ctx context.Context) error {
 	//取open data
 	FeeInfo, err := getParkingInfo(FeeURL)
 	//fmt.Printf(*TPEParkingInfo)
@@ -52,7 +52,7 @@ func UpdateFeeInfo(ctx context.Context) error {
 		feeKeys = append(feeKeys, feeKey)
 	}
 	//log.Print(&NTPC)
-	
+
 	putFeeInfo(ctx, feeKeys, &fees)
 	return nil
 }
@@ -100,7 +100,7 @@ func getParkingInfo(url string) (*string, error) {
 			log.Fatal(err)
 		}
 		temp := string(body)
-		
+
 		temp = strings.Replace(temp, " ", "", -1)
 		temp = strings.Replace(temp, "[", "", -1)
 		temp = strings.Replace(temp, "]", "", -1)
