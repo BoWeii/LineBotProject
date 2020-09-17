@@ -8,11 +8,11 @@ import (
 
 )
 
-func getBubbleInfo(parking Parking) (component []linebot.FlexComponent) {
+func getSpaceBubbleContents(space ParkingSpace) (component []linebot.FlexComponent) {
 	component = []linebot.FlexComponent{
 		&linebot.TextComponent{
 			Type:   linebot.FlexComponentTypeText,
-			Text:   parking.RoadName,
+			Text:   space.RoadName,
 			Size:   linebot.FlexTextSizeTypeXl,
 			Weight: linebot.FlexTextWeightTypeBold,
 		},
@@ -27,7 +27,7 @@ func getBubbleInfo(parking Parking) (component []linebot.FlexComponent) {
 				},
 				&linebot.TextComponent{
 					Type: linebot.FlexComponentTypeText,
-					Text: strconv.Itoa(parking.Avail) + " 個",
+					Text: strconv.Itoa(space.Avail) + " 個",
 				},
 			},
 		},
@@ -42,7 +42,7 @@ func getBubbleInfo(parking Parking) (component []linebot.FlexComponent) {
 				},
 				&linebot.TextComponent{
 					Type: linebot.FlexComponentTypeText,
-					Text: parking.Day + "\n" + parking.Hour,
+					Text: space.Day + "\n" + space.Hour,
 					Wrap: true,
 				},
 			},
@@ -58,7 +58,7 @@ func getBubbleInfo(parking Parking) (component []linebot.FlexComponent) {
 				},
 				&linebot.TextComponent{
 					Type: linebot.FlexComponentTypeText,
-					Text: parking.Pay + "\n" + parking.PayCash,
+					Text: space.Pay + "\n" + space.PayCash,
 					Wrap: true,
 				},
 			},
@@ -76,18 +76,18 @@ func getBubbleInfo(parking Parking) (component []linebot.FlexComponent) {
 			},
 			&linebot.TextComponent{
 				Type: linebot.FlexComponentTypeText,
-				Text: strconv.Itoa(int(parking.Distance)) + " 公尺",
+				Text: strconv.Itoa(int(space.Distance)) + " 公尺",
 			},
 		},
 	}
-	if parking.Distance >= 0 {
+	if space.Distance >= 0 {
 		component = append(component, &linebot.BoxComponent{})
 		copy(component[2:], component[1:])
 		component[1] = distComp
 	}
 	return
 }
-func getFeeBubbleInfo(info FeeInfo) (component []linebot.FlexComponent) {
+func getFeeBubbleContents(info FeeInfo) (component []linebot.FlexComponent) {
 	component = []linebot.FlexComponent{
 		&linebot.TextComponent{
 			Type:   linebot.FlexComponentTypeText,
@@ -178,7 +178,7 @@ func createFeeInfoContainer(info FeeInfo) (container *linebot.BubbleContainer) {
 			Type:     linebot.FlexComponentTypeBox,
 			Layout:   linebot.FlexBoxLayoutTypeVertical,
 			Spacing:  linebot.FlexComponentSpacingTypeSm,
-			Contents: getFeeBubbleInfo(info),
+			Contents: getFeeBubbleContents(info),
 		},
 		Size: linebot.FlexBubbleSizeTypeKilo,
 	}
@@ -186,15 +186,15 @@ func createFeeInfoContainer(info FeeInfo) (container *linebot.BubbleContainer) {
 	return
 }
 
-func createBubbleContainer(parking Parking, action string, route ...address) (container *linebot.BubbleContainer) {
+func createSpaceBubbleContainer(space ParkingSpace, action string, route ...address) (container *linebot.BubbleContainer) {
 	var uri string
 	if len(route) != 0 {
 		// &origin=" + route[0].Original +
 		//https://www.google.com/maps/dir/?api=1&origin= &destination= &waypoints=
-		uri = "https://www.google.com/maps/dir/?api=1&origin=" + route[0].Original + "&destination=" + route[0].Destination + "&waypoints=" + fmt.Sprintf("%f", parking.Lat) + "," + fmt.Sprintf("%f", parking.Lon)
+		uri = "https://www.google.com/maps/dir/?api=1&origin=" + route[0].Original + "&destination=" + route[0].Destination + "&waypoints=" + fmt.Sprintf("%f", space.Lat) + "," + fmt.Sprintf("%f", space.Lon)
 		println(uri)
 	} else {
-		uri = "https://www.google.com/maps/search/?api=1&query=" + fmt.Sprintf("%f", parking.Lat) + "," + fmt.Sprintf("%f", parking.Lon)
+		uri = "https://www.google.com/maps/search/?api=1&query=" + fmt.Sprintf("%f", space.Lat) + "," + fmt.Sprintf("%f", space.Lon)
 	}
 	container = &linebot.BubbleContainer{
 		Type: linebot.FlexContainerTypeBubble,
@@ -213,7 +213,7 @@ func createBubbleContainer(parking Parking, action string, route ...address) (co
 			Type:     linebot.FlexComponentTypeBox,
 			Layout:   linebot.FlexBoxLayoutTypeVertical,
 			Spacing:  linebot.FlexComponentSpacingTypeSm,
-			Contents: getBubbleInfo(parking),
+			Contents: getSpaceBubbleContents(space),
 		},
 		Footer: &linebot.BoxComponent{
 			Type:   linebot.FlexComponentTypeBox,
@@ -240,7 +240,7 @@ func createBubbleContainer(parking Parking, action string, route ...address) (co
 					Margin: linebot.FlexComponentMarginTypeXl,
 					Action: &linebot.PostbackAction{
 						Label: action,
-						Data:  "action=" + action + "&roadID=" + parking.RoadID,
+						Data:  "action=" + action + "&roadID=" + space.RoadID,
 					},
 				},
 			},
@@ -254,13 +254,13 @@ func createBubbleContainer(parking Parking, action string, route ...address) (co
 //CreateCarouselmesage 產生訊息
 func CreateCarouselmesage(info interface{}) (container *linebot.CarouselContainer) {
 	var bubbleConts []*linebot.BubbleContainer
-	var parkings []Parking
+	var parkings []ParkingSpace
 	var feeInfos []FeeInfo
 	var action string
 	var route address
 	switch info.(type) {
-	case []Parking:
-		parkings = info.([]Parking)
+	case []ParkingSpace:
+		parkings = info.([]ParkingSpace)
 		if int(parkings[0].Distance) < 0 {
 			action = "移除"
 		} else {
@@ -271,16 +271,16 @@ func CreateCarouselmesage(info interface{}) (container *linebot.CarouselContaine
 
 	case RouteWithParkings:
 		routeWithParkings := info.(RouteWithParkings)
-		parkings = routeWithParkings.Parkings
+		parkings = routeWithParkings.Spaces
 		route = routeWithParkings.Address
 		action = "加入最愛"
 	}
 
 	for _, parking := range parkings {
 		if route == (address{}) {
-			bubbleConts = append(bubbleConts, createBubbleContainer(parking, action))
+			bubbleConts = append(bubbleConts, createSpaceBubbleContainer(parking, action))
 		} else {
-			bubbleConts = append(bubbleConts, createBubbleContainer(parking, action, route))
+			bubbleConts = append(bubbleConts, createSpaceBubbleContainer(parking, action, route))
 		}
 	}
 	for _, feeInfo := range feeInfos {

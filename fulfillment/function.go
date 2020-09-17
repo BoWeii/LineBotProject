@@ -15,6 +15,7 @@ import (
 	//"google.golang.org/api/option"
 	//dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 	//"project.com/fulfillment/carouselmessage"
+
 )
 
 // dialogflowProcessor has all the information for connecting with Dialogflow
@@ -71,14 +72,14 @@ func processByDialogflow(message string, UserID string) (resp interface{}) {
 	if response.Intent == "GetRoute" {
 		if response.AllRequiredParamsPresent {
 			lat, lon := query.GetGPS(response.Entities["destination"]) //路名轉GPS
-			result := query.GetParkingsByGPS(lat, lon, false)
+			result := query.GetParkingSpacesByGPS(lat, lon, false)
 			route := query.RouteWithParkings{
-				Parkings: result,
+				Spaces: result,
 			}
 
 			route.Address.Original = response.Entities["original"]
 			route.Address.Destination = response.Entities["destination"]
-			if len(route.Parkings) == 0 {
+			if len(route.Spaces) == 0 {
 				resp = query.EmptyParkingBubbleMsg(route.Address)
 			} else {
 				log.Print(reflect.TypeOf(route))
@@ -138,12 +139,13 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 				resp = processByDialogflow(message.Text, event.Source.UserID)
 			case *linebot.LocationMessage: //位置訊息
 				fmt.Printf("gps %f,%f\n", message.Latitude, message.Longitude)
-				parkings := query.GetParkingsByGPS(message.Latitude, message.Longitude, true)
-
-				if len(parkings) == 0 {
+				spaces := query.GetParkingSpacesByGPS(message.Latitude, message.Longitude, true)
+				lots := query.GetParkingLotsByGPS(message.Latitude, message.Longitude)
+				fmt.Printf("%v", lots)
+				if len(spaces) == 0 {
 					resp = "你附近沒有空車位哦 😢"
 				} else {
-					resp = parkings
+					resp = spaces
 				}
 			}
 

@@ -86,6 +86,10 @@ github.com/thedevsaddam/gojsonq v2.3.0+incompatible/go.mod h1:RBcQaITThgJAAYKH7F
 github.com/tidwall/gjson v1.4.0/go.mod h1:P256ACg0Mn+j1RXIDXoss50DeIABTYK1PULOJHhxOls=
 github.com/tidwall/match v1.0.1/go.mod h1:LujAq0jyVjBy028G1WhWfIzbpQfMO8bBZ6Tyb0+pL9E=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
+github.com/xeonx/geom v0.0.0-20151223130215-76a21efc1ce4 h1:euU/zmXMiiVk7D2MFr+DowxhR5vneLsrvHsEL+2oj5Q=
+github.com/xeonx/geom v0.0.0-20151223130215-76a21efc1ce4/go.mod h1:ZPykJRloc9d9XR8xLVEVXdBPfUC73Z+yzOQU/fAEc8g=
+github.com/xeonx/proj4 v0.0.0-20151223112312-c52078bad901 h1:iSCvUcZhW/WSjZ80YFQDnvoFFBUmf/dQtScWFDBm5uI=
+github.com/xeonx/proj4 v0.0.0-20151223112312-c52078bad901/go.mod h1:va4ShuSDPhBD8tK7kyEMdVqhjAvZmTzWdxAKtkPbnjA=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2 h1:75k/FF0Q2YM8QYo07VPddOLBslDt1MZOdEslOHvmzAs=

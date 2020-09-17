@@ -1,6 +1,6 @@
 indexes:
-  - kind: NTPCParkings
+  - kind: NTPCParkingSpaces
     properties:
-      - name: RoadID
+      - name: ParkingStatus
       - name: Lat
-      - name: Lon
+      - name: CellStatus
