@@ -11,13 +11,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
 	// "strings"
 	// "reflect"
 
 	"cloud.google.com/go/datastore"
 	// xml2json "github.com/basgys/goxml2json"
 	parking "project.com/datastore/parkingstruct"
+
 )
 
 const projectID string = "exalted-yeti-289303"
@@ -34,6 +34,7 @@ type PubSubMessage struct {
 
 //UpdateNTPCParkingLotInfo consumes a Pub/Sub message 並更新停車位資訊
 func UpdateNTPCParkingLotInfo(ctx context.Context, m PubSubMessage) error {
+	var NTPCJsonData parking.NTPC
 	var NTPC parking.NTPC
 	NTPCKeys := [3][]*datastore.Key{}
 	// //新北市路邊停車格
@@ -42,17 +43,18 @@ func UpdateNTPCParkingLotInfo(ctx context.Context, m PubSubMessage) error {
 	} else {
 
 		//roadKeysNTPC := []*datastore.Key{}
-		if err := json.Unmarshal([]byte(*NTPCParkingSpaceInfo), &NTPC.Spaces); err != nil {
+		if err := json.Unmarshal([]byte(*NTPCParkingSpaceInfo), &NTPCJsonData.Spaces); err != nil {
 			log.Fatalf("error: %v", err)
 		} else {
 			//以roadID產生entity key
-			for _, cell := range NTPC.Spaces {
+			for _, cell := range NTPCJsonData.Spaces {
 				parentKey := datastore.NameKey("NTPCRoadName", cell.RoadID, nil)
 				roadKey := datastore.NameKey("NTPCParkingSpaces", strconv.Itoa(cell.ID), parentKey)
 				NTPCKeys[parkingSpaces] = append(NTPCKeys[parkingSpaces], roadKey)
 			}
 			log.Println("Update NTPC parking spaces")
 		}
+		NTPC.Spaces = NTPCJsonData.Spaces
 	}
 
 	//新北市停車場
@@ -60,39 +62,49 @@ func UpdateNTPCParkingLotInfo(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("error: %v", err)
 	} else {
 
-		if err := json.Unmarshal([]byte(*NTPCParkingLotInfo), &NTPC.Lot); err != nil {
+		if err := json.Unmarshal([]byte(*NTPCParkingLotInfo), &NTPCJsonData.Lot); err != nil {
 			log.Fatalf("error: %v", err)
 		} else {
 			//以lotID產生entity key
-			for _, lot := range NTPC.Lot {
-				lotKey := datastore.NameKey("NTPCParkingLots", strconv.Itoa(lot.ID), nil)
-				NTPCKeys[parkingLots] = append(NTPCKeys[parkingLots], lotKey)
+			for _, lot := range NTPCJsonData.Lot {
+				//只存有汽車車位停車場
+				if lot.TotalCar != 0 {
+					lotKey := datastore.NameKey("NTPCParkingLots", strconv.Itoa(lot.ID), nil)
+					NTPC.Lot = append(NTPC.Lot, lot)
+					NTPCKeys[parkingLots] = append(NTPCKeys[parkingLots], lotKey)
+				}
+
 			}
+
 			log.Println("Update NTPC parking lots")
 
 		}
 	}
 
-	putParkingInfo(ctx, NTPCKeys, &NTPC)
+	//putParkingInfo(ctx, NTPCKeys, &NTPC)
 	//新北市停車場剩餘數量
 	if NTPCParkingLotsAvailInfo, err := getNTPCParkingsInfo("https://data.ntpc.gov.tw/api/datasets/E09B35A5-A738-48CC-B0F5-570B67AD9C78/json", 1, parkingLots); err != nil {
 		log.Fatalf("error: %v", err)
 	} else {
 
-		var NTPCParkingLotsAvail []parking.ParkingLotAvailNTPC
-		if err := json.Unmarshal([]byte(*NTPCParkingLotsAvailInfo), &NTPCParkingLotsAvail); err != nil {
+		var NTPCParkingLotsAvailJSON []parking.ParkingLotAvailNTPC
+		var NTPCParkingLotsAvail []*parking.ParkingLotAvailNTPC
+		if err := json.Unmarshal([]byte(*NTPCParkingLotsAvailInfo), &NTPCParkingLotsAvailJSON); err != nil {
 			log.Fatalf("error: %v", err)
 		} else {
 
-			for _, lot := range NTPCParkingLotsAvail {
-				lotKey := datastore.NameKey("NTPCParkingLots", strconv.Itoa(lot.ID), nil)
-				lotAvailKey := datastore.IncompleteKey("NTPCParkingLotsAvail", lotKey)
-
-				NTPCKeys[parkingLotsAvail] = append(NTPCKeys[parkingLotsAvail], lotAvailKey)
+			for _, lot := range NTPCParkingLotsAvailJSON {
+				if lot.AvailableCar != -9 {
+					lotKey := datastore.NameKey("NTPCParkingLots", strconv.Itoa(lot.ID), nil)
+					lotAvailKey := datastore.NameKey("NTPCParkingLotsAvail", strconv.Itoa(lot.ID), lotKey)
+					NTPCParkingLotsAvail = append(NTPCParkingLotsAvail, &lot)
+					NTPCKeys[parkingLotsAvail] = append(NTPCKeys[parkingLotsAvail], lotAvailKey)
+				}
 			}
+
 			log.Println("Update NTPC parking lots Avail")
 			//fmt.Println(NTPCParkingLotsAvail)
-			//putParkingInfo(ctx, NTPCKeys, &NTPCParkingLotsAvail)
+			putParkingInfo(ctx, NTPCKeys, &NTPCParkingLotsAvail)
 
 		}
 	}
@@ -104,6 +116,7 @@ func UpdateNTPCParkingLotInfo(ctx context.Context, m PubSubMessage) error {
 func putParkingInfo(ctx context.Context, keys [3][]*datastore.Key, parkings interface{}) {
 
 	client, err := datastore.NewClient(ctx, projectID)
+
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
@@ -122,22 +135,21 @@ func putParkingInfo(ctx context.Context, keys [3][]*datastore.Key, parkings inte
 				}
 
 				if i == parkingSpaces {
-					// if _, err := client.PutMulti(ctx, keys[i][tmp:size-1], parkings.(*parking.NTPC).Spaces[tmp:size-1]); err != nil {
-					// 	log.Fatalf("PutMulti NTPCParkingSpaces: %v", err)
-					// }
+					if _, err := client.PutMulti(ctx, keys[i][tmp:size-1], parkings.(*parking.NTPC).Spaces[tmp:size-1]); err != nil {
+						log.Fatalf("PutMulti NTPCParkingSpaces: %v", err)
+					}
 				} else {
-					log.Println(tmp, size-1)
-					if _, err := client.PutMulti(ctx, keys[i][tmp:size-1], parkings.(*parking.NTPC).Lot[tmp:size-1]); err != nil {
 
+					if _, err := client.PutMulti(ctx, keys[i][tmp:size-1], parkings.(*parking.NTPC).Lot[tmp:size-1]); err != nil {
 						log.Fatalf("PutMulti NTPCParkingLot: %v", err)
 					}
 				}
 				tmp = size - 1
 			}
 		}
+		log.Println("Parking Info Saved sucess")
 	case *[]parking.ParkingLotAvailNTPC:
 		var tmp = 0
-
 		n := math.Ceil(float64(len(keys[parkingLotsAvail])) / 500) //一次最多put500筆
 
 		for j := 1; j <= int(n); j++ {
@@ -146,16 +158,14 @@ func putParkingInfo(ctx context.Context, keys [3][]*datastore.Key, parkings inte
 				size = j * 500
 			}
 			avails := parkings.(*[]parking.ParkingLotAvailNTPC)
-
 			if _, err := client.PutMulti(ctx, keys[parkingLotsAvail][tmp:size-1], (*avails)[tmp:size-1]); err != nil {
 				log.Fatalf("PutMulti NTPCParkingLot Avail: %v", err)
 			}
-
 			tmp = size - 1
 		}
 	}
 
-	log.Println("Parkings Info Saved sucess")
+	log.Println("Parking Lots Avail Info Saved sucess")
 
 }
 
