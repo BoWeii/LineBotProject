@@ -1,13 +1,12 @@
 package main
 
 import (
-	"log"	
+	"log"
 	"net/http"
 
 	"project.com/fulfillment"
 
-)	
-
+)
 
 func main() {
 	http.HandleFunc("/", fulfillment.Fulfillment)

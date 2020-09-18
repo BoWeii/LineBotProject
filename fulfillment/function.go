@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"reflect"
 
 	//"cloud.google.com/go/datastore"
 	//dialogflow "cloud.google.com/go/dialogflow/apiv2"
@@ -28,7 +27,7 @@ var bot *linebot.Client
 
 var err error
 
-const FeeURL string = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-95FE-99BB8DB5BCA0/json"
+const feeURL string = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-95FE-99BB8DB5BCA0/json"
 
 //response webhook回應
 // type response struct {
@@ -47,23 +46,39 @@ func init() {
 }
 
 func replyUser(resp interface{}, event *linebot.Event) {
-	var respMessg linebot.SendingMessage
+	var respMessg []linebot.SendingMessage
 	switch resp.(type) { //確認是何種類型訊息
 	case string:
-		respMessg = linebot.NewTextMessage(resp.(string))
+		respMessg = append(respMessg, linebot.NewTextMessage(resp.(string)))
 	case *linebot.BubbleContainer:
-		respMessg = linebot.NewFlexMessage("使用介紹", resp.(*linebot.BubbleContainer))
+		respMessg = append(respMessg, linebot.NewFlexMessage("使用介紹", resp.(*linebot.BubbleContainer)))
+	case []query.ParkingSpace:
+		container := query.CreateCarouselmesage(resp)
+		respMessg = append(respMessg, linebot.NewFlexMessage("車位資訊。", container))
+	case []query.ParkingLot:
+		container := query.CreateCarouselmesage(resp)
+		respMessg = append(respMessg, linebot.NewFlexMessage("停車場資訊。", container))
+	case query.RouteWithParkings:
+		container := query.CreateCarouselmesage(resp)
+		respMessg = append(respMessg, linebot.NewFlexMessage("車位資訊。", container))
+	case []query.FeeInfo:
+		container := query.CreateCarouselmesage(resp)
+		respMessg = append(respMessg, linebot.NewFlexMessage("待繳車費。", container))
 	default:
-		var container *linebot.CarouselContainer
-		container = query.CreateCarouselmesage(resp)
-		respMessg = linebot.NewFlexMessage("車位資訊。", container)
+		spacesContainer := query.CreateCarouselmesage(resp.([2]interface{})[0])
+		lotsContainer := query.CreateCarouselmesage(resp.([2]interface{})[1])
+		respMessg = append(respMessg, linebot.NewFlexMessage("車位資訊。", spacesContainer), linebot.NewFlexMessage("停車場資訊。", lotsContainer))
 	}
 
-	if _, err = bot.ReplyMessage(event.ReplyToken, respMessg).Do(); err != nil {
-		log.Println(respMessg)
-		log.Print("ReplyMessage Error ", err)
+	if len(respMessg) == 1 {
+		_, err = bot.ReplyMessage(event.ReplyToken, respMessg[0]).Do()
+	} else {
+		_, err = bot.ReplyMessage(event.ReplyToken, respMessg[0], respMessg[1]).Do()
 	}
 
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func processByDialogflow(message string, UserID string) (resp interface{}) {
@@ -72,9 +87,11 @@ func processByDialogflow(message string, UserID string) (resp interface{}) {
 	if response.Intent == "GetRoute" {
 		if response.AllRequiredParamsPresent {
 			lat, lon := query.GetGPS(response.Entities["destination"]) //路名轉GPS
-			result := query.GetParkingSpacesByGPS(lat, lon, false)
+			spaces := query.GetParkingSpacesByGPS(lat, lon, false, 3)
+			lots := query.GetParkingLotsByGPS(lat, lon, 3)
 			route := query.RouteWithParkings{
-				Spaces: result,
+				Spaces: spaces,
+				Lots:   lots,
 			}
 
 			route.Address.Original = response.Entities["original"]
@@ -82,7 +99,7 @@ func processByDialogflow(message string, UserID string) (resp interface{}) {
 			if len(route.Spaces) == 0 {
 				resp = query.EmptyParkingBubbleMsg(route.Address)
 			} else {
-				log.Print(reflect.TypeOf(route))
+				//log.Print(reflect.TypeOf(route))
 				resp = route //查詢車格資訊
 			}
 
@@ -139,13 +156,19 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 				resp = processByDialogflow(message.Text, event.Source.UserID)
 			case *linebot.LocationMessage: //位置訊息
 				fmt.Printf("gps %f,%f\n", message.Latitude, message.Longitude)
-				spaces := query.GetParkingSpacesByGPS(message.Latitude, message.Longitude, true)
-				lots := query.GetParkingLotsByGPS(message.Latitude, message.Longitude)
-				fmt.Printf("%v", lots)
-				if len(spaces) == 0 {
+				spaces := query.GetParkingSpacesByGPS(message.Latitude, message.Longitude, true, 10)
+				lots := query.GetParkingLotsByGPS(message.Latitude, message.Longitude, 10)
+				//fmt.Printf("%v", lots)
+				if len(spaces) == 0 && len(lots) == 0 {
 					resp = "你附近沒有空車位哦 😢"
 				} else {
-					resp = spaces
+					if len(spaces) > 0 && len(lots) > 0 {
+						resp = [2]interface{}{spaces, lots}
+					} else if len(spaces) > 0 {
+						resp = spaces
+					} else {
+						resp = lots
+					}
 				}
 			}
 
@@ -159,12 +182,15 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 
 			switch postbackData {
 			case "favor":
-				parkings := query.GetParkingsByFavor(UserID)
-
-				if len(parkings) == 0 {
+				spaces, lots := query.GetParkingsByFavor(UserID)
+				if len(spaces) > 0 && len(lots) > 0 {
+					resp = [2]interface{}{spaces, lots}
+				} else if len(spaces) == 0 && len(lots) == 0 {
 					resp = "你還沒有最愛哦 😜"
-				} else {
-					resp = parkings
+				} else if len(spaces) > 0 {
+					resp = spaces
+				} else if len(lots) > 0 {
+					resp = lots
 				}
 			case "intro":
 				resp = query.IntroBubbleMsg()
