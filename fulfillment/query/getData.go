@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/datastore"
+	"github.com/goinggo/mapstructure"
 	"github.com/thedevsaddam/gojsonq"
 	"google.golang.org/api/iterator"
 
@@ -177,19 +178,20 @@ func getUserFavor(userID string) (favor userFavor) {
 
 //GetFeeInfo get fee info
 func GetFeeInfo(carID string) (fees []FeeInfo) {
-	var temp FeeInfo
-	query := datastore.NewQuery("NTPCFeeInfo").
-		Filter("CarID=", carID)
-	it := DatastoreProc.client.Run(DatastoreProc.ctx, query)
-	for {
-		_, err := it.Next(&temp)
-		if err == iterator.Done {
-			break
-		} else if err != nil {
-			log.Fatalf("Error fetching fee info: %v", err)
+	const feeURL string = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-95FE-99BB8DB5BCA0/json"
+	info := getFeeInfo(feeURL)
+	jq := gojsonq.New().FromString(*info)
+	res := jq.Where("CarID", "=", carID).OrWhere("id", "=", nil).Get()
+
+	var result FeeInfo
+	for _, item := range res.([]interface{}) {
+		err := mapstructure.Decode(item.(map[string]interface{}), &result)
+		fees = append(fees, result)
+		if err != nil {
+			log.Fatal(err)
 		}
-		fees = append(fees, temp)
 	}
+
 	return
 }
 
@@ -487,6 +489,34 @@ func findFavorIndex(favor userFavor, postback map[string]string) (int, bool) {
 	}
 
 	return -1, false
+}
+
+// 取得停車費用
+func getFeeInfo(url string) *string {
+	var data string
+	data = "["
+	for i := 0; i <= 40; i++ {
+
+		resp, err := http.Get(url + "?page=" + strconv.Itoa(i) + "&size=1000")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		temp := string(body)
+
+		temp = strings.Replace(temp, " ", "", -1)
+		temp = strings.Replace(temp, "[", "", -1)
+		temp = strings.Replace(temp, "]", "", -1)
+		temp = strings.Replace(temp, "Amount_Ticket", "AmountTicket", -1)
+		data = data + temp + ","
+	}
+	data = data[:len(data)-1]
+	data += "]"
+	return &data
 }
 
 /*查詢各路段 ID*/

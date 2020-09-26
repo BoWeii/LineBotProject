@@ -2,18 +2,22 @@ package fee
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
-	"strings"
-	"cloud.google.com/go/datastore"
-	"encoding/json"
-	"strconv"
 	"net/http"
-	"io/ioutil"
+	"strconv"
+	"strings"
+
+	"cloud.google.com/go/datastore"
+	"github.com/goinggo/mapstructure"
+	"github.com/thedevsaddam/gojsonq"
 )
 
 //FeeInfo 繳費資訊
-type feeInfo struct {
+type FeeInfo struct {
 	TicketNo     string //收費編號
 	CarID        string //車牌號碼
 	Parkdt       string //開單日
@@ -22,40 +26,60 @@ type feeInfo struct {
 	CarType      string //車種
 }
 type Fees struct {
-	infos []*feeInfo
+	infos []*FeeInfo
 }
-const FeeURL string = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-95FE-99BB8DB5BCA0/json"
-const projectID string = "exalted-yeti-289303"
 
+const feeURL string = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-95FE-99BB8DB5BCA0/json"
+const projectID string = "exalted-yeti-289303"
 
 //Update 更新停車費資訊
 func Update(ctx context.Context) error {
 	//取open data
-	FeeInfo, err := getParkingInfo(FeeURL)
+	feeInfo, err := getParkingInfo(feeURL)
 	//fmt.Printf(*TPEParkingInfo)
 	if err != nil {
 		log.Print(err)
 	}
 
+	//fmt.Println(*feeInfo)
+	jq := gojsonq.New().FromString(*feeInfo)
+	res := jq.Where("CarID", "=", "3221-DB").OrWhere("id", "=", nil).Get()
+	var r Fees
+	var result FeeInfo
+	for _, item := range res.([]interface{}) {
+		err = mapstructure.Decode(item.(map[string]interface{}), &result)
+		r.infos = append(r.infos, &result)
+	}
+	fmt.Print(r.infos[0])
+	// var result Fees
+	// err = mapstructure.Decode(res, &(result.infos))
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// fmt.Printf("%#v", result)
+
 	var fees Fees
+
 	feeKeys := []*datastore.Key{}
 
 	//json轉struct
-	if err := json.Unmarshal([]byte(*FeeInfo), &fees.infos); err != nil {
+	if err := json.Unmarshal([]byte(*feeInfo), &fees.infos); err != nil {
 		log.Fatalf("error: %v", err)
 	}
 
 	//以roadID產生entity key
 	for _, fee := range fees.infos {
 		// log.Print(fee.CarID)
-		feeKey := datastore.NameKey("NTPCFeeInfo",fee.TicketNo,nil)
+		feeKey := datastore.NameKey("NTPCFeeInfo", fee.TicketNo, nil)
 		feeKeys = append(feeKeys, feeKey)
 	}
 	//log.Print(&NTPC)
 
-	putFeeInfo(ctx, feeKeys, &fees)
+	//putFeeInfo(ctx, feeKeys, &fees)
 	return nil
 }
+
 //put fee informations
 func putFeeInfo(ctx context.Context, feeKeys []*datastore.Key, fees *Fees) {
 

@@ -5,6 +5,7 @@ go 1.13
 require (
 	cloud.google.com/go v0.51.0
 	cloud.google.com/go/datastore v1.0.0
+	github.com/goinggo/mapstructure v0.0.0-20140717182941-194205d9b4a9
 	github.com/golang/protobuf v1.4.1
 	github.com/line/line-bot-sdk-go v7.0.0+incompatible
 	github.com/thedevsaddam/gojsonq v2.3.0+incompatible
