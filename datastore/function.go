@@ -5,7 +5,6 @@ import (
 
 	"project.com/datastore/parkings"
 	"project.com/datastore/roadname"
-
 )
 
 //UpdateParkingInfo 更新新北市車位資訊

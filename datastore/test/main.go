@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 
-	"project.com/datastore/roadname"
+	"project.com/datastore"
+	"project.com/datastore/parkings"
 
 )
 
 //main 測試function執行
 func main() {
 
-	//datastore.UpdateParkingInfo(context.Background(), parkings.PubSubMessage{Data: []byte("update")})
-	roadname.Update(context.Background())
+	datastore.UpdateParkingInfo(context.Background(), parkings.PubSubMessage{Data: []byte("update")})
+
 }
 
 //部署指令

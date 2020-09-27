@@ -14,7 +14,6 @@ import (
 
 	"cloud.google.com/go/datastore"
 	parking "project.com/datastore/parkingstruct"
-
 )
 
 const googleMapAPIKey string = "AIzaSyCzGP7dIwrOEuWxN8w40tBvwA_rvnbqudE"
@@ -63,7 +62,7 @@ func UpdateNTPCParkingLotsInfo(ctx context.Context, m PubSubMessage) error {
 			}
 
 			log.Println("Update NTPC parking lots")
-			//putParkingInfo(context.Background(), parkingLotsKeys, parkingLots)
+			putParkingInfo(context.Background(), parkingLotsKeys, parkingLots)
 		}
 	}
 
