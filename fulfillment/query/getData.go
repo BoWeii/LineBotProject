@@ -16,9 +16,18 @@ import (
 
 )
 
-const rangeLon float64 = 0.009
-const rangeLat float64 = 0.008
-const googleMapAPIKey string = "AIzaSyCzGP7dIwrOEuWxN8w40tBvwA_rvnbqudE"
+const (
+	rangeLon             float64 = 0.0045
+	rangeLat             float64 = 0.004
+	googleMapAPIKey      string  = "AIzaSyCzGP7dIwrOEuWxN8w40tBvwA_rvnbqudE"
+	parkingSpacesData    string  = "https://data.ntpc.gov.tw/api/datasets/54A507C4-C038-41B5-BF60-BBECB9D052C6/json"
+	parkingLotsAvailData string  = "https://data.ntpc.gov.tw/api/datasets/E09B35A5-A738-48CC-B0F5-570B67AD9C78/json"
+	feeData              string  = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-95FE-99BB8DB5BCA0/json"
+)
+const (
+	parkingSpaces = iota
+	parkingLotsAvail
+)
 
 type address struct {
 	Original    string
@@ -44,8 +53,8 @@ type FeeInfo struct {
 
 //ParkingSpace 停車格
 type ParkingSpace struct {
-	ID            int     //車格序號
-	CELLID        float64 //車格編號
+	ID            string  //車格序號
+	CELLID        string  //車格編號
 	Name          string  //車格類型
 	Day           string  //收費天
 	Hour          string  //收費時段
@@ -53,9 +62,9 @@ type ParkingSpace struct {
 	PayCash       string  //費率
 	Memo          string  //車格備註
 	RoadID        string  //路段代碼
-	CellStatus    bool    //車格狀態判斷 Y有車 N空位
-	IsNowCash     bool    //收費時段判斷
-	ParkingStatus int     //車格狀態 　1：有車、2：空位、3：非收費時段、4：時段性禁停、5：施工（民眾申請施工租用車格時使用）
+	CellStatus    string  //車格狀態判斷 Y有車 N空位
+	IsNowCash     string  //收費時段判斷
+	ParkingStatus string  //車格狀態 　1：有車、2：空位、3：非收費時段、4：時段性禁停、5：施工（民眾申請施工租用車格時使用）
 	Lat           float64 //緯度
 	Lon           float64 //經度
 	Distance      float64 //距離
@@ -65,7 +74,7 @@ type ParkingSpace struct {
 
 //ParkingLot 新北市停車場
 type ParkingLot struct {
-	ID          int     //停車場序號
+	ID          string  //停車場序號
 	Name        string  //停車場名稱
 	Type        int     //1：剩餘車位數 2：靜態停車場資料
 	Tel         string  //停車場電話
@@ -79,19 +88,11 @@ type ParkingLot struct {
 	Avail       int
 }
 
-//ParkingLotAvailNTPC 新北市停車場剩餘數量
-type ParkingLotAvailNTPC struct {
-	ID           int //停車場序號
-	AvailableCar int //剩餘數量
-}
 type roadName struct {
 	RoadID   string
 	RoadName string
 }
 
-type road struct {
-	RoadID string
-}
 type userFavor struct {
 	RoadID []string
 	LotID  []string
@@ -100,13 +101,10 @@ type userFavor struct {
 const (
 	roadID      = "roadID"
 	lotID       = "lotID"
-	all         = "all"
 	parkingType = "type"
 )
 
 func floatToString(num float64) string {
-	// to convert a float number to a string
-
 	return fmt.Sprintf("%f", num)
 }
 
@@ -118,18 +116,16 @@ func getAboutDist(userLat float64, userLon float64, lat float64, lon float64) (d
 func getMapDist(userLat float64, userLon float64, lat float64, lon float64) (dist float64) {
 	origins := floatToString(userLat) + "," + floatToString(userLon)
 	destinations := floatToString(lat) + "," + floatToString(lon)
-	// log.Printf("origins===",origins)
-	// log.Printf("destinations===",destinations)
+
 	url := "https://maps.googleapis.com/maps/api/distancematrix/json?origins=" + origins + "&destinations=" + destinations + "&key=" + googleMapAPIKey
-	//fmt.Println(url)
+
 	resp, _ := http.Get(url)
 	body, _ := ioutil.ReadAll(resp.Body)
 	jq := gojsonq.New().FromString(string(body)) //gojsonq解析json
 	res := jq.Find("rows.[0].elements.[0].distance")
 	dis := res.(map[string]interface{})
 	dist = dis["value"].(float64)
-	// distValue = dis["value"].(float64)
-	// log.Print("valueeeee=", distValue)
+
 	return
 }
 
@@ -137,10 +133,10 @@ func getMapDist(userLat float64, userLon float64, lat float64, lon float64) (dis
 func GetGPS(roadName string) (lat float64, lon float64) {
 
 	geocoding := "https://maps.googleapis.com/maps/api/geocode/json?address=" + roadName + "&key=" + googleMapAPIKey
-	//log.Print(geocoding)
+
 	resp, _ := http.Get(geocoding)
 	body, _ := ioutil.ReadAll(resp.Body)
-	//log.Print(string(body))
+
 	jq := gojsonq.New().FromString(string(body))    //gojsonq解析json
 	res := jq.Find("results.[0].geometry.location") //可以直接點網址了解json結構
 	gps := res.(map[string]interface{})             //interface型態轉回map
@@ -150,10 +146,6 @@ func GetGPS(roadName string) (lat float64, lon float64) {
 }
 
 func getRoadName(id string) (name string) {
-
-	// query := datastore.NewQuery("NTPCRoadName").
-	// 	Filter("RoadID =", id)
-	// it := datastoreProc.client.Run(datastoreProc.ctx, query)
 
 	key := datastore.NameKey("NTPCRoadName", id, nil)
 	road := new(roadName)
@@ -178,8 +170,8 @@ func getUserFavor(userID string) (favor userFavor) {
 
 //GetFeeInfo get fee info
 func GetFeeInfo(carID string) (fees []FeeInfo) {
-	const feeURL string = "https://data.ntpc.gov.tw/api/datasets/A676AF8E-D143-4D7A-95FE-99BB8DB5BCA0/json"
-	info := getFeeInfo(feeURL)
+
+	info := getFeeInfo(feeData)
 	jq := gojsonq.New().FromString(*info)
 	res := jq.Where("CarID", "=", carID).OrWhere("id", "=", nil).Get()
 
@@ -192,41 +184,50 @@ func GetFeeInfo(carID string) (fees []FeeInfo) {
 		}
 	}
 
+	if len(fees) > 10 {
+		fees = fees[:10]
+	}
 	return
 }
 
 //GetParkingsByFavor 以 favor 查車格
 func GetParkingsByFavor(userID string) ([]ParkingSpace, []ParkingLot) {
 
-	//query := datastore.NewQuery("userFavor").
-	//Filter("__key__ =", key)
 	favorRoads := getUserFavor(userID)
+
+	var spacesJq *gojsonq.JSONQ
+	if NTPCParkingSpaceInfo, err := getNTPCParkingsInfo(parkingSpacesData, parkingSpaces); err != nil {
+		log.Fatalf("error: %v", err)
+	} else {
+		spacesJq = gojsonq.New().FromString(*NTPCParkingSpaceInfo)
+	}
 
 	//datastore 查詢剩餘車位
 	var parkingSpaceList []ParkingSpace //儲存各路段離使用者最近且為空位的車格(一個路段一個) ex:[RoadID][distance,lat,lon,剩餘數量]
-	for index, roadID := range favorRoads.RoadID {
-		for _, status := range []int{2, 3} { //2為空位,3為非收費時段,datastore查詢沒有or的方法，所以須查詢兩次
-			query := datastore.NewQuery("NTPCParkingSpaces").
-				Filter("RoadID=", roadID)
+	for _, roadID := range favorRoads.RoadID {
+		spacesJq.Reset()
+		res := spacesJq.Where("ROADID", "=", roadID).First()
 
-			var parking []ParkingSpace
-			if len(parkingSpaceList) == index {
-				if _, err := DatastoreProc.client.GetAll(DatastoreProc.ctx, query.Limit(1), &parking); err != nil {
-					log.Fatalf("Error fetching favor parking space: %v", err)
-				} else if len(parking) > 0 {
-					parking[0].RoadName = getRoadName(roadID)
-					parking[0].Distance = -1
-					parkingSpaceList = append(parkingSpaceList, parking[0])
-				}
-			}
+		var parkingSpace ParkingSpace
 
-			if num, err := DatastoreProc.client.Count(DatastoreProc.ctx, query.Filter("CellStatus =", false).Filter("ParkingStatus =", status)); err != nil {
-				log.Fatalf("Error counting favor parking space: %v", err)
-			} else {
-				fmt.Print(status, num)
-				parkingSpaceList[index].Avail += num
-			}
+		err := mapstructure.Decode(res.(map[string]interface{}), &parkingSpace)
+		parkingSpace.RoadName = getRoadName(roadID)
+		parkingSpace.Distance = -1
+		parkingSpace.Avail = spacesJq.Where("CELLSTATUS", "=", "N").
+			WhereIn("ParkingStatus", []string{"2", "3"}).Count()
+		parkingSpaceList = append(parkingSpaceList, parkingSpace)
+
+		if err != nil {
+			log.Fatal("Decode:", err)
 		}
+
+	}
+
+	var lotsJq *gojsonq.JSONQ
+	if NTPCParkingLotsAvail, err := getNTPCParkingsInfo(parkingLotsAvailData, parkingLotsAvail); err != nil {
+		log.Fatalf("error: %v", err)
+	} else {
+		lotsJq = gojsonq.New().FromString(*NTPCParkingLotsAvail)
 	}
 
 	var parkingLotList []ParkingLot
@@ -239,17 +240,13 @@ func GetParkingsByFavor(userID string) ([]ParkingSpace, []ParkingLot) {
 			log.Fatalf("Error fetching favor parking lot: %v", err)
 		} else {
 			lot.Distance = -1
-			parkingLotList = append(parkingLotList, lot)
-		}
-
-		if lot.Type == 1 {
-			query := datastore.NewQuery("NTPCParkingLotsAvail").Ancestor(key)
-			var avail []ParkingLotAvailNTPC
-			if _, err := DatastoreProc.client.GetAll(DatastoreProc.ctx, query.Limit(1), &avail); err != nil && err != datastore.ErrNoSuchEntity {
-				log.Fatalf("Error fetching favor parking lot: %v", err)
-			} else if len(avail) == 1 {
-				lot.Avail = avail[0].AvailableCar
+			if lot.Type == 1 {
+				lotsJq.Reset()
+				res := lotsJq.Where("id", "=", LotID).First()
+				lot.Avail, _ = strconv.Atoi(res.(map[string]interface{})["availableCar"].(string))
 			}
+
+			parkingLotList = append(parkingLotList, lot)
 		}
 
 	}
@@ -262,76 +259,80 @@ func GetParkingSpacesByGPS(lat float64, lon float64, IsOnlyEmpty bool, maxLen in
 	if maxLen > 10 {
 		log.Fatalln("GetParkingSpacesByGPS MaxLen <=10 ")
 	}
-	//datastore 查詢剩餘車位
-	parkingSpaceList := make(map[string]ParkingSpace) //儲存各路段離使用者最近且為空位的車格(一個路段一個) ex:[RoadID][distance,lat,lon,剩餘數量]
 
-	for _, i := range []int{2, 3} { //2為空位,3為非收費時段,datastore查詢沒有or的方法，所以須查詢兩次
-		query := datastore.NewQuery("NTPCParkingSpaces").
-			Filter("ParkingStatus =", i).
-			Filter("Lat >", lat-rangeLat).
-			Filter("Lat <", lat+rangeLat)
-		if IsOnlyEmpty {
-			query.Filter("CellStatus =", false) //false代表沒有車，但必須確認ParkingStatus必須為2或3才可停
+	if NTPCParkingSpaceInfo, err := getNTPCParkingsInfo(parkingSpacesData, parkingSpaces); err != nil {
+		log.Fatalf("error: %v", err)
+	} else {
+		parkingSpaceList := make(map[string]ParkingSpace)
+
+		status := []string{"N"}
+		if !IsOnlyEmpty {
+			status = append(status, "Y")
 		}
-		it := DatastoreProc.client.Run(DatastoreProc.ctx, query)
 
-		for {
-			var parking ParkingSpace
-			_, err := it.Next(&parking) //查詢後的結果一一迭代儲存到車格的struct
+		jq := gojsonq.New().FromString(*NTPCParkingSpaceInfo)
+		res := jq.WhereIn("CELLSTATUS", status).
+			WhereIn("ParkingStatus", []string{"2", "3"}).
+			Where("lat", ">", lat-rangeLat).Where("lat", "<", lat+rangeLat).
+			Where("lon", ">", lon-rangeLon).Where("lon", "<", lon+rangeLon).
+			Get()
 
-			if err == iterator.Done { // || len(parkingSpaceList) == 5 {
-				break
-			} else if err != nil {
-				log.Fatalf("Error fetching road: %v", err)
+		var parkingSpace ParkingSpace
+
+		for _, item := range res.([]interface{}) {
+
+			err := mapstructure.Decode(item.(map[string]interface{}), &parkingSpace)
+
+			if roadParkingSpace, ok := parkingSpaceList[parkingSpace.RoadID]; ok { //確認車格是否已在list內，有則比較直線距離，無則直接儲存
+				parkingSpace.Avail = parkingSpaceList[parkingSpace.RoadID].Avail + 1
+				dist := getAboutDist(lat, lon, parkingSpace.Lat, parkingSpace.Lon) //經位度計算直線距離
+
+				if dist < roadParkingSpace.Distance { //比較同路段車格距離，若距離較小，則復寫到list
+					parkingSpaceList[parkingSpace.RoadID] = parkingSpace
+				} else {
+					tmp := parkingSpaceList[parkingSpace.RoadID]
+					tmp.Avail++
+					parkingSpaceList[parkingSpace.RoadID] = tmp
+				}
+
+			} else {
+				parkingSpace.Avail = 1
+				parkingSpaceList[parkingSpace.RoadID] = parkingSpace
 			}
-			if parking.Lon < lon-rangeLon || parking.Lon > lon+rangeLon { //datastore 只能對同一屬性作不等式filter 故需再次判斷lon
+			if err != nil {
+				log.Fatal("Decode:", err)
+			}
+		}
+
+		for _, tmp := range parkingSpaceList {
+			tmp.Distance = getMapDist(lat, lon, tmp.Lat, tmp.Lon)
+			if tmp.Distance > 500 {
 				continue
 			}
-
-			dist := getAboutDist(lat, lon, parking.Lat, parking.Lon) //經位度計算直線距離
-			parking.Distance = dist
-			parking.RoadName = getRoadName(parking.RoadID)
-
-			if roadParkingSpace, ok := parkingSpaceList[parking.RoadID]; ok { //確認車格是否已在list內，有則比較直線距離，無則直接儲存
-				parking.Avail = parkingSpaceList[parking.RoadID].Avail + 1
-				if dist < roadParkingSpace.Distance { //比較同路段車格距離，若距離較小，則復寫到list
-					parkingSpaceList[parking.RoadID] = parking
-				}
+			tmp.RoadName = getRoadName(tmp.RoadID)
+			len := len(result)
+			if len == 0 {
+				result = append(result, tmp)
 			} else {
-				parking.Avail = 1
-				parkingSpaceList[parking.RoadID] = parking
-			}
-		}
-	}
-
-	var queryRes []ParkingSpace
-	for _, tmp := range parkingSpaceList {
-		tmp.Distance = getMapDist(lat, lon, tmp.Lat, tmp.Lon)
-		if tmp.Distance > 1000 {
-			continue
-		}
-		len := len(queryRes)
-		if len == 0 {
-			queryRes = append(queryRes, tmp)
-		} else {
-			for i := len; i >= 0; i-- {
-				if i == 0 {
-					queryRes = append([]ParkingSpace{tmp}, queryRes...)
-				} else if tmp.Distance > queryRes[i-1].Distance {
-					queryRes = append(queryRes, ParkingSpace{})
-					copy(queryRes[i+1:], queryRes[i:])
-					queryRes[i] = tmp
-					break
+				for i := len; i >= 0; i-- {
+					if i == 0 {
+						result = append([]ParkingSpace{tmp}, result...)
+					} else if tmp.Distance > result[i-1].Distance {
+						result = append(result, ParkingSpace{})
+						copy(result[i+1:], result[i:])
+						result[i] = tmp
+						break
+					}
 				}
 			}
 		}
 	}
 
-	if len(queryRes) > maxLen {
-		queryRes = queryRes[:maxLen]
+	if len(result) > maxLen {
+		result = result[:maxLen]
 	}
 
-	return queryRes
+	return
 }
 
 // GetParkingLotsByGPS  以GPS找停車場資料
@@ -341,13 +342,20 @@ func GetParkingLotsByGPS(lat float64, lon float64, maxLen int) (result []Parking
 		log.Fatalln("GetParkingSpacesByGPS MaxLen <=10 ")
 	}
 	//datastore 查詢剩餘車位
-	parkingLotList := make(map[int]ParkingLot) //儲存各路段離使用者最近且為空位的車格(一個路段一個) ex:[RoadID][distance,lat,lon,剩餘數量]
+	parkingLotList := make(map[string]ParkingLot) //儲存各路段離使用者最近且為空位的車格(一個路段一個) ex:[RoadID][distance,lat,lon,剩餘數量]
 
 	query := datastore.NewQuery("NTPCParkingLots").
 		Filter("Lat >", lat-rangeLat).
 		Filter("Lat <", lat+rangeLat)
 
 	it := DatastoreProc.client.Run(DatastoreProc.ctx, query)
+
+	var lotsJq *gojsonq.JSONQ
+	if NTPCParkingLotsAvail, err := getNTPCParkingsInfo(parkingLotsAvailData, parkingLotsAvail); err != nil {
+		log.Fatalf("error: %v", err)
+	} else {
+		lotsJq = gojsonq.New().FromString(*NTPCParkingLotsAvail)
+	}
 
 	for {
 		var lot ParkingLot
@@ -365,16 +373,9 @@ func GetParkingLotsByGPS(lat float64, lon float64, maxLen int) (result []Parking
 		dist := getAboutDist(lat, lon, lot.Lat, lot.Lon) //經位度計算直線距離
 		lot.Distance = dist
 		if lot.Type == 1 {
-			lotKey := datastore.NameKey("NTPCParkingLots", strconv.Itoa(lot.ID), nil)
-			query := datastore.NewQuery("NTPCParkingLotsAvail").Ancestor(lotKey)
-
-			var lotsAvail []ParkingLotAvailNTPC
-
-			if _, err := DatastoreProc.client.GetAll(DatastoreProc.ctx, query.Limit(1), &lotsAvail); err != nil {
-				log.Fatalf("Error fetching favor road parking: %v", err)
-			} else if len(lotsAvail) == 1 {
-				lot.Avail = lotsAvail[0].AvailableCar
-			}
+			lotsJq.Reset()
+			res := lotsJq.Where("id", "=", lot.ID).First()
+			lot.Avail, _ = strconv.Atoi(res.(map[string]interface{})["availableCar"].(string))
 		}
 		parkingLotList[lot.ID] = lot
 
@@ -384,7 +385,7 @@ func GetParkingLotsByGPS(lat float64, lon float64, maxLen int) (result []Parking
 	for _, tmp := range parkingLotList {
 		//fmt.Printf("%v\n", tmp)
 		tmp.Distance = getMapDist(lat, lon, tmp.Lat, tmp.Lon)
-		if tmp.Distance > 1000 {
+		if tmp.Distance > 500 {
 			continue
 		}
 		len := len(queryRes)
@@ -413,7 +414,7 @@ func GetParkingLotsByGPS(lat float64, lon float64, maxLen int) (result []Parking
 }
 func unmarshalFavorPostback(data string) map[string]string {
 	postBack := make(map[string]string)
-	fmt.Printf(data)
+	//fmt.Printf(data)
 	tmp := strings.Split(data, "&")
 	action := strings.Split(tmp[0], "=")[1]
 
@@ -446,7 +447,6 @@ func UserFavorModify(userID string, postBack string) (resp string) {
 	} else {
 		modifyFavor = &favor.LotID
 	}
-	fmt.Print(favor)
 
 	switch postBackdata["action"] {
 	case "加入最愛":
@@ -519,29 +519,45 @@ func getFeeInfo(url string) *string {
 	return &data
 }
 
-/*查詢各路段 ID*/
-//  for _, i := range id {
-//  	query = datastore.NewQuery("NTPCParkings").
-//  		Filter("RoadID =", i).
-//  		Order("RoadID").
-//  		Limit(1)
-//  	it = datastoreProc.client.Run(datastoreProc.ctx, query)
-//  	for {
-//  		var road road
-//  		_, err := it.Next(&road)
-//  		if err == iterator.Done {
-//  			break
-//  		}
-//  		if err != nil {
-//  			log.Fatalf("Error fetching road: %v", err)
-//  		}
-// /*geocoding gps 轉路名*/
-//  		fmt.Printf("RoadID %s ,%f ,%f ", road.RoadID, road.Lat, road.Lon)
-//  		geo := "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + fmt.Sprintf("%f", road.Lat) + "," + fmt.Sprintf("%f", road.Lon) + "&result_type=route&language=zh-tw&key=AIzaSyAhsij-kCTyOzK9Vq83zemmxJXTdNJVkV8"
-//  		resp, _ := http.Get(geo)
-//  		body, _ := ioutil.ReadAll(resp.Body)
-//  		jq := gojsonq.New().FromString(string(body))
-//  		res := jq.From("results.[0].address_components").Where("types.[0]", "=", "route").Get()
-//  		fmt.Println(res.([]interface{})[0].(map[string]interface{})["long_name"].(string))
-//  	}
-//  }
+//getNTPCParkingsInfo
+func getNTPCParkingsInfo(url string, dataType int) (*string, error) {
+	var data string
+	data = "["
+	i := 0
+	for {
+
+		resp, err := http.Get(url + "?page=" + strconv.Itoa(i) + "&size=1000")
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		bodyString := string(body)
+		bodyString = strings.Replace(bodyString, "[", "", 1)
+		bodyString = strings.Replace(bodyString, "]", "", 1)
+		if dataType == parkingSpaces {
+			bodyString = strings.ReplaceAll(bodyString, "\"lat\":\"", "\"lat\":")
+			bodyString = strings.ReplaceAll(bodyString, "\",\"lon\"", ",\"lon\"")
+
+			bodyString = strings.ReplaceAll(bodyString, "\"lon\":\"", "\"lon\":")
+			bodyString = strings.ReplaceAll(bodyString, "\"}", "}")
+		}
+		if bodyString == "" {
+			break
+		} else {
+
+			if i != 0 {
+				bodyString = "," + bodyString
+			}
+			data = data + bodyString
+			i++
+		}
+	}
+
+	data += "]"
+	return &data, nil
+}

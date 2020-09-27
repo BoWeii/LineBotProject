@@ -101,7 +101,7 @@ func (dp *dialogflowProcessor) ProcessNLP(rawMessage string, username string) (r
 	if len(params) > 0 {
 		for paramName, entity := range params {
 			extractedValue := extractDialogflowEntities(entity) //解析entities type
-			log.Printf("paramName= %s, entity= %s\n", paramName, extractedValue)
+			//log.Printf("paramName= %s, entity= %s\n", paramName, extractedValue)
 			if extractedValue != "" {
 				r.Entities[paramName] = extractedValue
 			} else {

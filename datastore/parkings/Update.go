@@ -1,8 +1,6 @@
 package parkings
 
 import (
-	// "compress/gzip"
-	// "bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,12 +12,9 @@ import (
 	"strings"
 	"time"
 
-	// "strings"
-	// "reflect"
-
 	"cloud.google.com/go/datastore"
-	// xml2json "github.com/basgys/goxml2json"
 	parking "project.com/datastore/parkingstruct"
+
 )
 
 const googleMapAPIKey string = "AIzaSyCzGP7dIwrOEuWxN8w40tBvwA_rvnbqudE"
@@ -35,82 +30,40 @@ type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
 
-//UpdateNTPCParkingLotInfo consumes a Pub/Sub message 並更新停車位資訊
-func UpdateNTPCParkingLotInfo(ctx context.Context, m PubSubMessage) error {
-	var NTPCJsonData parking.NTPC
-	var NTPC parking.NTPC
-	NTPCKeys := [3][]*datastore.Key{}
-	// //新北市路邊停車格
-	if NTPCParkingSpaceInfo, err := getNTPCParkingsInfo("https://data.ntpc.gov.tw/api/datasets/54A507C4-C038-41B5-BF60-BBECB9D052C6/json", 30, parkingSpaces); err != nil {
-		log.Fatalf("error: %v", err)
-	} else {
-
-		//roadKeysNTPC := []*datastore.Key{}
-		if err := json.Unmarshal([]byte(*NTPCParkingSpaceInfo), &NTPCJsonData.Spaces); err != nil {
-			log.Fatalf("error: %v", err)
-		} else {
-			//以roadID產生entity key
-			for _, cell := range NTPCJsonData.Spaces {
-				parentKey := datastore.NameKey("NTPCRoadName", cell.RoadID, nil)
-				roadKey := datastore.NameKey("NTPCParkingSpaces", strconv.Itoa(cell.ID), parentKey)
-				NTPCKeys[parkingSpaces] = append(NTPCKeys[parkingSpaces], roadKey)
-			}
-			log.Println("Update NTPC parking spaces")
-		}
-		NTPC.Spaces = NTPCJsonData.Spaces
-	}
+//UpdateNTPCParkingLotsInfo consumes a Pub/Sub message 並更新停車位資訊
+func UpdateNTPCParkingLotsInfo(ctx context.Context, m PubSubMessage) error {
+	var parkingLotsJSONData []*parking.ParkingLotNTPC
+	var parkingLots []*parking.ParkingLotNTPC
+	parkingLotsKeys := []*datastore.Key{}
 
 	//新北市停車場
-	if NTPCParkingLotInfo, err := getNTPCParkingsInfo("https://data.ntpc.gov.tw/api/datasets/B1464EF0-9C7C-4A6F-ABF7-6BDF32847E68/json", 1, parkingLots); err != nil {
+	if NTPCParkingLotInfo, err := GetNTPCParkingsInfo("https://data.ntpc.gov.tw/api/datasets/B1464EF0-9C7C-4A6F-ABF7-6BDF32847E68/json"); err != nil {
 		log.Fatalf("error: %v", err)
 	} else {
-
-		if err := json.Unmarshal([]byte(*NTPCParkingLotInfo), &NTPCJsonData.Lot); err != nil {
+		if err := json.Unmarshal([]byte(*NTPCParkingLotInfo), &parkingLotsJSONData); err != nil {
 			log.Fatalf("error: %v", err)
 		} else {
-			//以lotID產生entity key
-			for _, lot := range NTPCJsonData.Lot {
-				//只存有汽車車位停車場
+
+			isExist := make(map[string]bool)
+			for _, lot := range parkingLotsJSONData {
 				if lot.TotalCar != 0 {
-					lotKey := datastore.NameKey("NTPCParkingLots", strconv.Itoa(lot.ID), nil)
-					lot.Lat, lot.Lon = twd97ToWgs84(lot.Lon, lot.Lat)
-					NTPC.Lot = append(NTPC.Lot, lot)
-					NTPCKeys[parkingLots] = append(NTPCKeys[parkingLots], lotKey)
-					time.Sleep(500 * time.Millisecond)
+					if _, ok := isExist[lot.ID]; ok {
+						continue //排除重複公開資料
+					} else {
+						isExist[lot.ID] = true
+						lotKey := datastore.NameKey("NTPCParkingLots", lot.ID, nil)
+						lot.Lat, lot.Lon = twd97ToWgs84(lot.Lon, lot.Lat)
+						parkingLots = append(parkingLots, lot)
+						parkingLotsKeys = append(parkingLotsKeys, lotKey)
+						time.Sleep(500 * time.Millisecond)
+					}
+
 				}
 
 			}
 
 			log.Println("Update NTPC parking lots")
-
-		}
-	}
-
-	putParkingInfo(ctx, NTPCKeys, &NTPC)
-	//新北市停車場剩餘數量
-	if NTPCParkingLotsAvailInfo, err := getNTPCParkingsInfo("https://data.ntpc.gov.tw/api/datasets/E09B35A5-A738-48CC-B0F5-570B67AD9C78/json", 1, parkingLots); err != nil {
-		log.Fatalf("error: %v", err)
-	} else {
-
-		var NTPCParkingLotsAvailJSON []parking.ParkingLotAvailNTPC
-		var NTPCParkingLotsAvail []*parking.ParkingLotAvailNTPC
-		if err := json.Unmarshal([]byte(*NTPCParkingLotsAvailInfo), &NTPCParkingLotsAvailJSON); err != nil {
-			log.Fatalf("error: %v", err)
-		} else {
-
-			for _, lot := range NTPCParkingLotsAvailJSON {
-				if lot.AvailableCar != -9 {
-					lotKey := datastore.NameKey("NTPCParkingLots", strconv.Itoa(lot.ID), nil)
-					lotAvailKey := datastore.NameKey("NTPCParkingLotsAvail", strconv.Itoa(lot.ID), lotKey)
-					NTPCParkingLotsAvail = append(NTPCParkingLotsAvail, &lot)
-					NTPCKeys[parkingLotsAvail] = append(NTPCKeys[parkingLotsAvail], lotAvailKey)
-				}
-			}
-
-			log.Println("Update NTPC parking lots Avail")
-			//fmt.Println(NTPCParkingLotsAvail)
-			//putParkingInfo(ctx, NTPCKeys, &NTPCParkingLotsAvail)
-
+			//putParkingInfo(context.Background(), parkingLotsKeys, parkingLots)
 		}
 	}
 
@@ -118,7 +71,7 @@ func UpdateNTPCParkingLotInfo(ctx context.Context, m PubSubMessage) error {
 }
 
 //put路段資訊
-func putParkingInfo(ctx context.Context, keys [3][]*datastore.Key, parkings interface{}) {
+func putParkingInfo(ctx context.Context, keys []*datastore.Key, parkings interface{}) {
 
 	client, err := datastore.NewClient(ctx, projectID)
 
@@ -127,58 +80,37 @@ func putParkingInfo(ctx context.Context, keys [3][]*datastore.Key, parkings inte
 	}
 
 	switch parkings.(type) {
-	case *parking.NTPC:
+	case []*parking.ParkingLotNTPC:
 		for i := 0; i <= 1; i++ {
 
 			var tmp = 0
-			n := math.Ceil(float64(len(keys[i])) / 500) //一次最多put500筆
+			n := math.Ceil(float64(len(keys)) / 500) //一次最多put500筆
 
 			for j := 1; j <= int(n); j++ {
 				var size int
-				if size = len(keys[i]); j*500 < len(keys[i]) {
+				if size = len(keys); j*500 < len(keys) {
 					size = j * 500
 				}
 
-				if i == parkingSpaces {
-					// if _, err := client.PutMulti(ctx, keys[i][tmp:size-1], parkings.(*parking.NTPC).Spaces[tmp:size-1]); err != nil {
-					// 	log.Fatalf("PutMulti NTPCParkingSpaces: %v", err)
-					// }
-				} else {
-
-					if _, err := client.PutMulti(ctx, keys[i][tmp:size-1], parkings.(*parking.NTPC).Lot[tmp:size-1]); err != nil {
-						log.Fatalf("PutMulti NTPCParkingLot: %v", err)
-					}
+				if _, err := client.PutMulti(ctx, keys[tmp:size-1], parkings.([]*parking.ParkingLotNTPC)[tmp:size-1]); err != nil {
+					log.Fatalf("PutMulti NTPCParkingLot: %v", err)
 				}
+
 				tmp = size - 1
 			}
 		}
-		log.Println("Parking Info Saved sucess")
-	case *[]parking.ParkingLotAvailNTPC:
-		var tmp = 0
-		n := math.Ceil(float64(len(keys[parkingLotsAvail])) / 500) //一次最多put500筆
+		log.Println("Parking Lots Info Saved sucess")
 
-		for j := 1; j <= int(n); j++ {
-			var size int
-			if size = len(keys[parkingLotsAvail]); j*500 < len(keys[parkingLotsAvail]) {
-				size = j * 500
-			}
-			avails := parkings.(*[]parking.ParkingLotAvailNTPC)
-			if _, err := client.PutMulti(ctx, keys[parkingLotsAvail][tmp:size-1], (*avails)[tmp:size-1]); err != nil {
-				log.Fatalf("PutMulti NTPCParkingLot Avail: %v", err)
-			}
-			tmp = size - 1
-		}
 	}
-
-	log.Println("Parking Lots Avail Info Saved sucess")
 
 }
 
-//getNTPCParkingsInfo
-func getNTPCParkingsInfo(url string, page int, parkingsType int) (*string, error) {
+//GetNTPCParkingsInfo 取得公開資料
+func GetNTPCParkingsInfo(url string) (*string, error) {
 	var data string
 	data = "["
-	for i := 0; i <= page; i++ {
+	i := 0
+	for {
 
 		resp, err := http.Get(url + "?page=" + strconv.Itoa(i) + "&size=1000")
 		if err != nil {
@@ -189,21 +121,28 @@ func getNTPCParkingsInfo(url string, page int, parkingsType int) (*string, error
 		if err != nil {
 			log.Fatal(err)
 		}
-		temp := string(body)
-		temp = strings.Replace(temp, "[", "", -1)
-		temp = strings.Replace(temp, "]", "", -1)
-		if parkingsType == parkingSpaces {
-			temp = strings.ReplaceAll(temp, "\"CELLSTATUS\""+":"+"\"Y\"", "\"CELLSTATUS\""+":"+"\"true\"")
-			temp = strings.ReplaceAll(temp, "\"CELLSTATUS\""+":"+"\"N\"", "\"CELLSTATUS\""+":"+"\"false\"")
+		bodyString := string(body)
+		bodyString = strings.Replace(bodyString, "[", "", 1)
+		bodyString = strings.Replace(bodyString, "]", "", 1)
+
+		if bodyString == "" {
+			break
+		} else {
+
+			if i != 0 {
+				bodyString = "," + bodyString
+			}
+			data = data + bodyString
+			i++
 		}
-		data = data + temp + ","
+
 	}
-	data = data[:len(data)-1]
+
 	data += "]"
 	return &data, nil
 }
 
-//getGPS 地標轉gps
+//getGPS twd97轉gps
 func twd97ToWgs84(tx float64, ty float64) (lat float64, lon float64) {
 
 	deocoding := "http://taibif.tw/BDTools/proj4/convert.php?source=5&destination=1&x=" + fmt.Sprintf("%f", tx) + "&y=" + fmt.Sprintf("%f", ty)
@@ -212,7 +151,7 @@ func twd97ToWgs84(tx float64, ty float64) (lat float64, lon float64) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	//log.Println(tx, ty)
 	html := string(body)
-	log.Println(deocoding)
+	//log.Println(deocoding)
 	conversion := strings.Split(html, "<br>")[1]
 	res := strings.Split(conversion, " ")
 

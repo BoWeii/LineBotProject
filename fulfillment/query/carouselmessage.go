@@ -407,7 +407,7 @@ func createLotBubbleContainer(lot ParkingLot, action string, route ...address) (
 					Margin: linebot.FlexComponentMarginTypeXl,
 					Action: &linebot.PostbackAction{
 						Label: action,
-						Data:  "action=" + action + "&lotID=" + strconv.Itoa(lot.ID),
+						Data:  "action=" + action + "&lotID=" + lot.ID,
 					},
 				},
 			},
@@ -498,12 +498,12 @@ func IntroBubbleMsg() (container *linebot.BubbleContainer) {
 			Contents: []linebot.FlexComponent{
 				&linebot.TextComponent{
 					Type: linebot.FlexComponentTypeText,
-					Text: "只要傳送位置訊息給我，小幫手就會搜尋附近 1 公里內有空位的路邊停車格，若有常停的路段，也可以加入至最愛哦！😘",
+					Text: "只要傳送位置訊息給我，小幫手就會搜尋附近 500 公尺內有空位的路邊停車格，若有常停的路段，也可以加入至最愛哦！😘",
 					Wrap: true,
 				},
 				&linebot.TextComponent{
 					Type: linebot.FlexComponentTypeText,
-					Text: "按下開始使用，即刻體驗👇🏻",
+					Text: "按下開始使用，即刻體驗更多功能 👇🏻",
 					Wrap: true,
 				},
 			},

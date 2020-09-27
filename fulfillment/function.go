@@ -1,7 +1,6 @@
 package fulfillment
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -155,7 +154,7 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 			case *linebot.TextMessage: //文字訊息
 				resp = processByDialogflow(message.Text, event.Source.UserID)
 			case *linebot.LocationMessage: //位置訊息
-				fmt.Printf("gps %f,%f\n", message.Latitude, message.Longitude)
+				//fmt.Printf("gps %f,%f\n", message.Latitude, message.Longitude)
 				spaces := query.GetParkingSpacesByGPS(message.Latitude, message.Longitude, true, 10)
 				lots := query.GetParkingLotsByGPS(message.Latitude, message.Longitude, 10)
 				//fmt.Printf("%v", lots)
@@ -178,7 +177,7 @@ func Fulfillment(w http.ResponseWriter, r *http.Request) {
 		} else if event.Type == linebot.EventTypePostback {
 			UserID := event.Source.UserID
 			postbackData := event.Postback.Data
-			log.Println("UserID", UserID, "  ", postbackData)
+			//log.Println("UserID", UserID, "  ", postbackData)
 
 			switch postbackData {
 			case "favor":

@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"project.com/datastore/fee"
+	"project.com/datastore/roadname"
 
 )
 
@@ -11,10 +11,7 @@ import (
 func main() {
 
 	//datastore.UpdateParkingInfo(context.Background(), parkings.PubSubMessage{Data: []byte("update")})
-
-	//roadname.Update(context.Background())
-	fee.Update(context.Background())
-
+	roadname.Update(context.Background())
 }
 
 //部署指令

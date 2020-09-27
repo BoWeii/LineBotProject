@@ -2,7 +2,6 @@ package roadname
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"math"
 
@@ -21,6 +20,8 @@ type roads struct {
 
 //Update 更新路名
 func Update(ctx context.Context) {
+
+	log.Printf("Update RoadName Info")
 
 	roadKeys := []*datastore.Key{}
 
@@ -56,6 +57,6 @@ func putRoadName(ctx context.Context, roadKeys []*datastore.Key, datas *roads) {
 		}
 		tmp = size - 1
 	}
-	fmt.Printf("RoadName Info Saved sucess")
+	log.Printf("RoadName Info Saved sucess")
 
 }
