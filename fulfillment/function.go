@@ -95,10 +95,9 @@ func processByDialogflow(message string, UserID string) (resp interface{}) {
 
 			route.Address.Original = response.Entities["original"]
 			route.Address.Destination = response.Entities["destination"]
-			if len(route.Spaces) == 0 {
+			if len(route.Spaces) == 0 && len(route.Lots) == 0 {
 				resp = query.EmptyParkingBubbleMsg(route.Address)
 			} else {
-				//log.Print(reflect.TypeOf(route))
 				resp = route //查詢車格資訊
 			}
 
