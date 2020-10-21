@@ -96,6 +96,13 @@ func getLotBubbleContents(lot ParkingLot) (component []linebot.FlexComponent) {
 			return strconv.Itoa(lot.Avail) + " 個"
 		}
 	}
+	var fee = func() string {
+		if lot.Pay == "" {
+			return "暫無資料"
+		} else {
+			return lot.Pay
+		}
+	}
 	component = []linebot.FlexComponent{
 		&linebot.TextComponent{
 			Type:   linebot.FlexComponentTypeText,
@@ -160,7 +167,7 @@ func getLotBubbleContents(lot ParkingLot) (component []linebot.FlexComponent) {
 				},
 				&linebot.TextComponent{
 					Type: linebot.FlexComponentTypeText,
-					Text: lot.Pay,
+					Text: fee(),
 					Wrap: true,
 				},
 			},
@@ -244,22 +251,6 @@ func getFeeBubbleContents(info FeeInfo) (component []linebot.FlexComponent) {
 			},
 		},
 	}
-
-	// distComp := &linebot.BoxComponent{
-	// 	Type:   linebot.FlexComponentTypeBox,
-	// 	Layout: linebot.FlexBoxLayoutTypeBaseline,
-	// 	Contents: []linebot.FlexComponent{
-	// 		&linebot.TextComponent{
-	// 			Type:  linebot.FlexComponentTypeText,
-	// 			Text:  "TicketNo ",
-	// 			Color: "#aaaaaa",
-	// 		},
-	// 		&linebot.TextComponent{
-	// 			Type: linebot.FlexComponentTypeText,
-	// 			Text: info.TicketNo,
-	// 		},
-	// 	},
-	// }
 	return
 }
 func createFeeInfoContainer(info FeeInfo) (container *linebot.BubbleContainer) {
@@ -294,7 +285,7 @@ func createSpaceBubbleContainer(space ParkingSpace, action string, route ...addr
 		// &origin=" + route[0].Original +
 		//https://www.google.com/maps/dir/?api=1&origin= &destination= &waypoints=
 		uri = "https://www.google.com/maps/dir/?api=1&origin=" + route[0].Original + "&destination=" + route[0].Destination + "&waypoints=" + fmt.Sprintf("%f", space.Lat) + "," + fmt.Sprintf("%f", space.Lon)
-		println(uri)
+		//println(uri)
 	} else {
 		uri = "https://www.google.com/maps/search/?api=1&query=" + fmt.Sprintf("%f", space.Lat) + "," + fmt.Sprintf("%f", space.Lon)
 	}

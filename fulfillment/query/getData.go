@@ -13,7 +13,6 @@ import (
 	"github.com/goinggo/mapstructure"
 	"github.com/thedevsaddam/gojsonq"
 	"google.golang.org/api/iterator"
-
 )
 
 const (
@@ -196,10 +195,12 @@ func GetParkingsByFavor(userID string) ([]ParkingSpace, []ParkingLot) {
 	favorRoads := getUserFavor(userID)
 
 	var spacesJq *gojsonq.JSONQ
-	if NTPCParkingSpaceInfo, err := getNTPCParkingsInfo(parkingSpacesData, parkingSpaces); err != nil {
-		log.Fatalf("error: %v", err)
-	} else {
-		spacesJq = gojsonq.New().FromString(*NTPCParkingSpaceInfo)
+	if len(favorRoads.LotID)+len(favorRoads.RoadID) != 0 {
+		if NTPCParkingSpaceInfo, err := getNTPCParkingsInfo(parkingSpacesData, parkingSpaces, 31); err != nil {
+			log.Fatalf("error: %v", err)
+		} else {
+			spacesJq = gojsonq.New().FromString(*NTPCParkingSpaceInfo)
+		}
 	}
 
 	//datastore 查詢剩餘車位
@@ -224,7 +225,7 @@ func GetParkingsByFavor(userID string) ([]ParkingSpace, []ParkingLot) {
 	}
 
 	var lotsJq *gojsonq.JSONQ
-	if NTPCParkingLotsAvail, err := getNTPCParkingsInfo(parkingLotsAvailData, parkingLotsAvail); err != nil {
+	if NTPCParkingLotsAvail, err := getNTPCParkingsInfo(parkingLotsAvailData, parkingLotsAvail, 1); err != nil {
 		log.Fatalf("error: %v", err)
 	} else {
 		lotsJq = gojsonq.New().FromString(*NTPCParkingLotsAvail)
@@ -260,7 +261,7 @@ func GetParkingSpacesByGPS(lat float64, lon float64, IsOnlyEmpty bool, maxLen in
 		log.Fatalln("GetParkingSpacesByGPS MaxLen <=10 ")
 	}
 
-	if NTPCParkingSpaceInfo, err := getNTPCParkingsInfo(parkingSpacesData, parkingSpaces); err != nil {
+	if NTPCParkingSpaceInfo, err := getNTPCParkingsInfo(parkingSpacesData, parkingSpaces, 31); err != nil {
 		log.Fatalf("error: %v", err)
 	} else {
 		parkingSpaceList := make(map[string]ParkingSpace)
@@ -351,7 +352,7 @@ func GetParkingLotsByGPS(lat float64, lon float64, maxLen int) (result []Parking
 	it := DatastoreProc.client.Run(DatastoreProc.ctx, query)
 
 	var lotsJq *gojsonq.JSONQ
-	if NTPCParkingLotsAvail, err := getNTPCParkingsInfo(parkingLotsAvailData, parkingLotsAvail); err != nil {
+	if NTPCParkingLotsAvail, err := getNTPCParkingsInfo(parkingLotsAvailData, parkingLotsAvail, 1); err != nil {
 		log.Fatalf("error: %v", err)
 	} else {
 		lotsJq = gojsonq.New().FromString(*NTPCParkingLotsAvail)
@@ -495,69 +496,76 @@ func findFavorIndex(favor userFavor, postback map[string]string) (int, bool) {
 func getFeeInfo(url string) *string {
 	var data string
 	data = "["
+	ch := make(chan string)
 	for i := 0; i <= 40; i++ {
-
-		resp, err := http.Get(url + "?page=" + strconv.Itoa(i) + "&size=1000")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		temp := string(body)
-
-		temp = strings.Replace(temp, " ", "", -1)
-		temp = strings.Replace(temp, "[", "", -1)
-		temp = strings.Replace(temp, "]", "", -1)
-		temp = strings.Replace(temp, "Amount_Ticket", "AmountTicket", -1)
-		data = data + temp + ","
+		go fetchFee(url+"?page="+strconv.Itoa(i)+"&size=1000", ch)
 	}
-	data = data[:len(data)-1]
+	for i := 0; i <= 40; i++ {
+		if i == 0 {
+			data = data + <-ch
+		} else {
+			data = data + "," + <-ch
+		}
+	}
 	data += "]"
 	return &data
 }
 
 //getNTPCParkingsInfo
-func getNTPCParkingsInfo(url string, dataType int) (*string, error) {
+func getNTPCParkingsInfo(url string, dataType int, page int) (*string, error) {
 	var data string
 	data = "["
-	i := 0
-	for {
 
-		resp, err := http.Get(url + "?page=" + strconv.Itoa(i) + "&size=1000")
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		bodyString := string(body)
-		bodyString = strings.Replace(bodyString, "[", "", 1)
-		bodyString = strings.Replace(bodyString, "]", "", 1)
-		if dataType == parkingSpaces {
-			bodyString = strings.ReplaceAll(bodyString, "\"lat\":\"", "\"lat\":")
-			bodyString = strings.ReplaceAll(bodyString, "\",\"lon\"", ",\"lon\"")
-
-			bodyString = strings.ReplaceAll(bodyString, "\"lon\":\"", "\"lon\":")
-			bodyString = strings.ReplaceAll(bodyString, "\"}", "}")
-		}
-		if bodyString == "" {
-			break
-		} else {
-
-			if i != 0 {
-				bodyString = "," + bodyString
-			}
-			data = data + bodyString
-			i++
-		}
+	ch := make(chan string)
+	for i := 0; i <= page; i++ {
+		go fetchParking(url+"?page="+strconv.Itoa(i)+"&size=1000", dataType, ch)
 	}
 
+	for i := 0; i <= page; i++ {
+		if i == 0 {
+			data = data + <-ch
+		} else {
+			data = data + "," + <-ch
+		}
+	}
 	data += "]"
 	return &data, nil
+}
+
+func fetchParking(url string, dataType int, ch chan<- string) {
+
+	resp, err := http.Get(url)
+	if err != nil {
+		ch <- fmt.Sprint(err)
+		return
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	bodyString := string(body)
+	bodyString = strings.Replace(bodyString, "[", "", 1)
+	bodyString = strings.Replace(bodyString, "]", "", 1)
+	if dataType == parkingSpaces {
+		bodyString = strings.ReplaceAll(bodyString, "\"lat\":\"", "\"lat\":")
+		bodyString = strings.ReplaceAll(bodyString, "\",\"lon\"", ",\"lon\"")
+		bodyString = strings.ReplaceAll(bodyString, "\"lon\":\"", "\"lon\":")
+		bodyString = strings.ReplaceAll(bodyString, "\"}", "}")
+	}
+	ch <- bodyString
+}
+func fetchFee(url string, ch chan<- string) {
+
+	resp, err := http.Get(url)
+	if err != nil {
+		ch <- fmt.Sprint(err)
+		return
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	bodyString := string(body)
+	bodyString = strings.Replace(bodyString, "[", "", 1)
+	bodyString = strings.Replace(bodyString, "]", "", 1)
+	bodyString = strings.ReplaceAll(bodyString, "   ", "")
+	bodyString = strings.ReplaceAll(bodyString, "Amount_Ticket", "AmountTicket")
+
+	ch <- bodyString
 }
