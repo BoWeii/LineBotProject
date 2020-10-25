@@ -3,13 +3,16 @@ package main
 import (
 	"context"
 
-	linebotProject "project.com/datastore"
+	"project.com/datastore"
+	"project.com/datastore/parkings"
+
 )
 
 //main 測試function執行
 func main() {
-	// linebotProject.A(context.Background())
-	linebotProject.UpdateParkingInfo(context.Background(), linebotProject.PubSubMessage{Data: []byte("update")})
+
+	datastore.UpdateParkingInfo(context.Background(), parkings.PubSubMessage{Data: []byte("update")})
+
 }
 
 //部署指令

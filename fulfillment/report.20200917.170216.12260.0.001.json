@@ -1,0 +1,491 @@
+
+{
+  "header": {
+    "reportVersion": 2,
+    "event": "Allocation failed - JavaScript heap out of memory",
+    "trigger": "FatalError",
+    "filename": "report.20200917.170216.12260.0.001.json",
+    "dumpEventTime": "2020-09-17T17:02:16Z",
+    "dumpEventTimeStamp": "1600333336067",
+    "processId": 12260,
+    "threadId": null,
+    "cwd": "c:\\Users\\wei14\\Desktop\\LineBotProject\\fulfillment",
+    "commandLine": [
+      "C:\\Users\\wei14\\AppData\\Local\\heroku\\client\\7.42.5\\bin\\..\\bin\\node.exe",
+      "C:\\Users\\wei14\\AppData\\Local\\heroku\\client\\7.42.5\\bin\\..\\bin\\run",
+      "info"
+    ],
+    "nodejsVersion": "v12.16.2",
+    "wordSize": 64,
+    "arch": "x64",
+    "platform": "win32",
+    "componentVersions": {
+      "node": "12.16.2",
+      "v8": "7.8.279.23-node.34",
+      "uv": "1.34.2",
+      "zlib": "1.2.11",
+      "brotli": "1.0.7",
+      "ares": "1.15.0",
+      "modules": "72",
+      "nghttp2": "1.40.0",
+      "napi": "5",
+      "llhttp": "2.0.4",
+      "http_parser": "2.9.3",
+      "openssl": "1.1.1e",
+      "cldr": "36.0",
+      "icu": "65.1",
+      "tz": "2019c",
+      "unicode": "12.1"
+    },
+    "release": {
+      "name": "node",
+      "lts": "Erbium",
+      "headersUrl": "https://nodejs.org/download/release/v12.16.2/node-v12.16.2-headers.tar.gz",
+      "sourceUrl": "https://nodejs.org/download/release/v12.16.2/node-v12.16.2.tar.gz",
+      "libUrl": "https://nodejs.org/download/release/v12.16.2/win-x64/node.lib"
+    },
+    "osName": "Windows_NT",
+    "osRelease": "10.0.18362",
+    "osVersion": "Windows 10 Home",
+    "osMachine": "x86_64",
+    "cpus": [
+      {
+        "model": "Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz",
+        "speed": 2712,
+        "user": 6775953,
+        "nice": 0,
+        "sys": 5366500,
+        "idle": 14482140,
+        "irq": 325000
+      },
+      {
+        "model": "Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz",
+        "speed": 2712,
+        "user": 6997421,
+        "nice": 0,
+        "sys": 4905421,
+        "idle": 14721328,
+        "irq": 66968
+      },
+      {
+        "model": "Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz",
+        "speed": 2712,
+        "user": 8084953,
+        "nice": 0,
+        "sys": 5490000,
+        "idle": 13049218,
+        "irq": 47453
+      },
+      {
+        "model": "Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz",
+        "speed": 2712,
+        "user": 8475218,
+        "nice": 0,
+        "sys": 5374265,
+        "idle": 12774687,
+        "irq": 29171
+      }
+    ],
+    "networkInterfaces": [
+      {
+        "name": "Wi-Fi",
+        "internal": false,
+        "mac": "28:16:ad:a9:2f:22",
+        "address": "2001:b400:e261:9b40:b400:e922:2b87:8172",
+        "netmask": "ffff:ffff:ffff:ffff::",
+        "family": "IPv6",
+        "scopeid": 0
+      },
+      {
+        "name": "Wi-Fi",
+        "internal": false,
+        "mac": "28:16:ad:a9:2f:22",
+        "address": "2001:b400:e261:9b40:b5b7:5acb:bc40:a83b",
+        "netmask": "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+        "family": "IPv6",
+        "scopeid": 0
+      },
+      {
+        "name": "Wi-Fi",
+        "internal": false,
+        "mac": "28:16:ad:a9:2f:22",
+        "address": "fe80::b400:e922:2b87:8172",
+        "netmask": "ffff:ffff:ffff:ffff::",
+        "family": "IPv6",
+        "scopeid": 17
+      },
+      {
+        "name": "Wi-Fi",
+        "internal": false,
+        "mac": "28:16:ad:a9:2f:22",
+        "address": "192.168.43.235",
+        "netmask": "255.255.255.0",
+        "family": "IPv4"
+      },
+      {
+        "name": "Loopback Pseudo-Interface 1",
+        "internal": true,
+        "mac": "00:00:00:00:00:00",
+        "address": "::1",
+        "netmask": "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+        "family": "IPv6",
+        "scopeid": 0
+      },
+      {
+        "name": "Loopback Pseudo-Interface 1",
+        "internal": true,
+        "mac": "00:00:00:00:00:00",
+        "address": "127.0.0.1",
+        "netmask": "255.0.0.0",
+        "family": "IPv4"
+      }
+    ],
+    "host": "LAPTOP-WEI"
+  },
+  "javascriptStack": {
+    "message": "No stack.",
+    "stack": [
+      "Unavailable."
+    ]
+  },
+  "nativeStack": [
+    {
+      "pc": "0x00007ff621d52309",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff621d56869",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff621d556e8",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff621e7dd82",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff62269a27e",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622682351",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff62254e8ac",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622556831",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff62254be03",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff62254a474",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff62256b67d",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff6222d13d1",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622ae730d",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622aad4a7",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622a6c2bc",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622a6c2bc",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622a6c2bc",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622a6c2bc",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622a6c2bc",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622a6c2bc",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622a697f1",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622a693dc",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff6225a7f63",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff6225a78e6",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff62267895d",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff621ea658e",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff621ea67c7",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff621ea4eaa",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff621e395cc",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff621ea6223",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff621d26a9c",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ff622b9f3f8",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ffaabd47bd4",
+      "symbol": ""
+    },
+    {
+      "pc": "0x00007ffaac52ce51",
+      "symbol": ""
+    }
+  ],
+  "javascriptHeap": {
+    "totalMemory": 3194880,
+    "totalCommittedMemory": 3194880,
+    "usedMemory": 2423680,
+    "availableMemory": 2195667952,
+    "memoryLimit": 2197815296,
+    "heapSpaces": {
+      "read_only_space": {
+        "memorySize": 262144,
+        "committedMemory": 262144,
+        "capacity": 32808,
+        "used": 32808,
+        "available": 0
+      },
+      "new_space": {
+        "memorySize": 1048576,
+        "committedMemory": 1048576,
+        "capacity": 1047456,
+        "used": 1047440,
+        "available": 16
+      },
+      "old_space": {
+        "memorySize": 1187840,
+        "committedMemory": 1187840,
+        "capacity": 951544,
+        "used": 951480,
+        "available": 64
+      },
+      "code_space": {
+        "memorySize": 430080,
+        "committedMemory": 430080,
+        "capacity": 153152,
+        "used": 153152,
+        "available": 0
+      },
+      "map_space": {
+        "memorySize": 266240,
+        "committedMemory": 266240,
+        "capacity": 238800,
+        "used": 238800,
+        "available": 0
+      },
+      "large_object_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 0,
+        "used": 0,
+        "available": 0
+      },
+      "code_large_object_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 0,
+        "used": 0,
+        "available": 0
+      },
+      "new_large_object_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 1047456,
+        "used": 0,
+        "available": 1047456
+      }
+    }
+  },
+  "resourceUsage": {
+    "userCpuSeconds": 0.093,
+    "kernelCpuSeconds": 0.062,
+    "cpuConsumptionPercent": 15.5,
+    "maxRss": 22327296,
+    "pageFaults": {
+      "IORequired": 5615,
+      "IONotRequired": 0
+    },
+    "fsActivity": {
+      "reads": 0,
+      "writes": 5
+    }
+  },
+  "libuv": [
+  ],
+  "workers": [
+  ],
+  "environmentVariables": {
+    "=C:": "c:\\Users\\wei14\\Desktop\\LineBotProject\\fulfillment",
+    "ALLUSERSPROFILE": "C:\\ProgramData",
+    "AMD_ENTRYPOINT": "vs/workbench/services/extensions/node/extensionHostProcess",
+    "APPDATA": "C:\\Users\\wei14\\AppData\\Roaming",
+    "APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL": "true",
+    "CommonProgramFiles": "C:\\Program Files\\Common Files",
+    "CommonProgramFiles(x86)": "C:\\Program Files (x86)\\Common Files",
+    "CommonProgramW6432": "C:\\Program Files\\Common Files",
+    "COMPUTERNAME": "LAPTOP-WEI",
+    "ComSpec": "C:\\WINDOWS\\system32\\cmd.exe",
+    "DriverData": "C:\\Windows\\System32\\Drivers\\DriverData",
+    "DXSDK_DIR": "D:\\Program\\Microsoft DirectX SDK (February 2010)\\",
+    "ELECTRON_CRASHPAD_PIPE_NAME": "\\\\.\\pipe\\crashpad_15456_RTANCYNXMEZZVFFT",
+    "ELECTRON_RUN_AS_NODE": "1",
+    "FREI0R_PATH": "D:\\Program\\Video Converter Studio\\frei0r;D:\\Program\\Video Converter Studio\\frei0r",
+    "GOPATH": "D:\\GoTool;",
+    "GOPROXY": "https://proxy.golang.org,direct",
+    "GPROOT": "D:\\Go",
+    "GTK_BASEPATH": "C:\\Program Files (x86)\\GtkSharp\\2.12\\",
+    "HEROKU_BINPATH": "C:\\Users\\wei14\\AppData\\Local\\heroku\\client\\bin\\heroku",
+    "HEROKU_REDIRECTED": "1",
+    "HOMEDRIVE": "C:",
+    "HOMEPATH": "\\Users\\wei14",
+    "INTEL_DEV_REDIST": "C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\",
+    "KMP_BLOCKTIME": "0",
+    "LOCALAPPDATA": "C:\\Users\\wei14\\AppData\\Local",
+    "LOGONSERVER": "\\\\LAPTOP-WEI",
+    "MIC_LD_LIBRARY_PATH": "C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\compiler\\lib\\mic",
+    "NIEXTCCOMPILERSUPP": "C:\\Program Files (x86)\\National Instruments\\Shared\\ExternalCompilerSupport\\C\\",
+    "NUMBER_OF_PROCESSORS": "4",
+    "OMP_WAIT_POLICY": "PASSIVE",
+    "OneDrive": "C:\\Users\\wei14\\OneDrive",
+    "OneDriveConsumer": "C:\\Users\\wei14\\OneDrive",
+    "OS": "Windows_NT",
+    "Path": "D:\\Go\\bin;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\MinGW\\bin;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\Intel\\WiFi\\bin\\;C:\\Program Files\\Common Files\\Intel\\WirelessCommon\\;C:\\Program Files\\NVIDIA Corporation\\NVIDIA NvDLISR;C:\\Program Files\\nodejs\\;C:\\Program Files\\dotnet\\;D:\\Program\\Visual Leak Detector\\bin\\Win32;D:\\Program\\Visual Leak Detector\\bin\\Win64;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;D:\\Python36-32;D:\\Python36-32\\Scripts;D:\\Program\\Git\\cmd;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files (x86)\\Microsoft SQL Server\\150\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\150\\DTS\\Binn\\;C:\\Program Files (x86)\\Microsoft SQL Server\\150\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\130\\Tools\\Binn\\;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\wei14\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;D:\\Python36-32;C:\\Users\\wei14\\AppData\\Local\\Google\\Cloud SDK\\google-cloud-sdk\\bin;C:\\Users\\wei14\\AppData\\Local\\GitHubDesktop\\bin;C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin;C:\\Users\\wei14\\AppData\\Roaming\\npm;D:\\Program\\heroku\\bin;C:\\Users\\wei14\\.dotnet\\tools",
+    "PATHEXT": ".COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC",
+    "ping": " C:\\WINDOWS\\system32;C:\\WINDOWS; ",
+    "PIPE_LOGGING": "true",
+    "PROCESSOR_ARCHITECTURE": "AMD64",
+    "PROCESSOR_IDENTIFIER": "Intel64 Family 6 Model 142 Stepping 9, GenuineIntel",
+    "PROCESSOR_LEVEL": "6",
+    "PROCESSOR_REVISION": "8e09",
+    "ProgramData": "C:\\ProgramData",
+    "ProgramFiles": "C:\\Program Files",
+    "ProgramFiles(x86)": "C:\\Program Files (x86)",
+    "ProgramW6432": "C:\\Program Files",
+    "PROMPT": "$P$G",
+    "PSModulePath": ";C:\\Users\\wei14\\AppData\\Local\\Google\\Cloud SDK\\google-cloud-sdk\\platform\\PowerShell",
+    "PUBLIC": "C:\\Users\\Public",
+    "QSYS_ROOTDIR": "D:\\Program\\intelFPGA_lite\\18.1\\quartus\\sopc_builder\\bin",
+    "QUARTUS_ROOTDIR": "D:\\Program\\intelFPGA_lite\\18.1\\quartus",
+    "SESSIONNAME": "Console",
+    "SOPC_KIT_NIOS2": "D:\\Program\\intelFPGA_lite\\18.1\\nios2eds",
+    "SystemDrive": "C:",
+    "SystemRoot": "C:\\WINDOWS",
+    "TEMP": "C:\\Users\\wei14\\AppData\\Local\\Temp",
+    "TMP": "C:\\Users\\wei14\\AppData\\Local\\Temp",
+    "USERDOMAIN": "LAPTOP-WEI",
+    "USERDOMAIN_ROAMINGPROFILE": "LAPTOP-WEI",
+    "USERNAME": "wei14",
+    "USERPROFILE": "C:\\Users\\wei14",
+    "VERBOSE_LOGGING": "true",
+    "VS150ENTCOMNTOOLS": "D:\\Microsoft Visual Studio\\2017\\Enterprise\\Common7\\Tools\\",
+    "VSCODE_CWD": "C:\\Users\\wei14\\Desktop\\LineBotProject",
+    "VSCODE_HANDLES_UNCAUGHT_ERRORS": "true",
+    "VSCODE_IPC_HOOK": "\\\\.\\pipe\\8d1b29305cd175524570e73b1e58b589-1.41.1-main-sock",
+    "VSCODE_IPC_HOOK_EXTHOST": "\\\\.\\pipe\\vscode-ipc-c5b52565-b105-4fc3-b1bf-d69b878c1efe-sock",
+    "VSCODE_LOGS": "C:\\Users\\wei14\\AppData\\Roaming\\Code\\logs\\20200917T165833",
+    "VSCODE_LOG_STACK": "false",
+    "VSCODE_NLS_CONFIG": "{\"locale\":\"zh-tw\",\"availableLanguages\":{\"*\":\"zh-tw\"},\"_languagePackId\":\"c00716ba30497e821cb5ca5ae47f2f4e.zh-tw\",\"_translationsConfigFile\":\"C:\\\\Users\\\\wei14\\\\AppData\\\\Roaming\\\\Code\\\\clp\\\\c00716ba30497e821cb5ca5ae47f2f4e.zh-tw\\\\tcf.json\",\"_cacheRoot\":\"C:\\\\Users\\\\wei14\\\\AppData\\\\Roaming\\\\Code\\\\clp\\\\c00716ba30497e821cb5ca5ae47f2f4e.zh-tw\",\"_resolvedLanguagePackCoreLocation\":\"C:\\\\Users\\\\wei14\\\\AppData\\\\Roaming\\\\Code\\\\clp\\\\c00716ba30497e821cb5ca5ae47f2f4e.zh-tw\\\\26076a4de974ead31f97692a0d32f90d735645c0\",\"_corruptedFile\":\"C:\\\\Users\\\\wei14\\\\AppData\\\\Roaming\\\\Code\\\\clp\\\\c00716ba30497e821cb5ca5ae47f2f4e.zh-tw\\\\corrupted.info\",\"_languagePackSupport\":true}",
+    "VSCODE_NODE_CACHED_DATA_DIR": "C:\\Users\\wei14\\AppData\\Roaming\\Code\\CachedData\\26076a4de974ead31f97692a0d32f90d735645c0",
+    "VSCODE_PID": "15456",
+    "windir": "C:\\WINDOWS"
+  },
+  "sharedObjects": [
+    "C:\\Users\\wei14\\AppData\\Local\\heroku\\client\\7.42.5\\bin\\node.exe",
+    "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+    "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+    "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+    "C:\\WINDOWS\\System32\\WS2_32.dll",
+    "C:\\WINDOWS\\System32\\RPCRT4.dll",
+    "C:\\WINDOWS\\System32\\PSAPI.DLL",
+    "C:\\WINDOWS\\System32\\ADVAPI32.dll",
+    "C:\\WINDOWS\\System32\\msvcrt.dll",
+    "C:\\WINDOWS\\System32\\sechost.dll",
+    "C:\\WINDOWS\\System32\\USER32.dll",
+    "C:\\WINDOWS\\System32\\win32u.dll",
+    "C:\\WINDOWS\\System32\\GDI32.dll",
+    "C:\\WINDOWS\\System32\\gdi32full.dll",
+    "C:\\WINDOWS\\System32\\msvcp_win.dll",
+    "C:\\WINDOWS\\System32\\ucrtbase.dll",
+    "C:\\WINDOWS\\System32\\CRYPT32.dll",
+    "C:\\WINDOWS\\System32\\MSASN1.dll",
+    "C:\\WINDOWS\\System32\\bcrypt.dll",
+    "C:\\WINDOWS\\SYSTEM32\\dbghelp.dll",
+    "C:\\WINDOWS\\SYSTEM32\\IPHLPAPI.DLL",
+    "C:\\WINDOWS\\SYSTEM32\\USERENV.dll",
+    "C:\\WINDOWS\\System32\\profapi.dll",
+    "C:\\WINDOWS\\SYSTEM32\\WINMM.dll",
+    "C:\\WINDOWS\\SYSTEM32\\WINMMBASE.dll",
+    "C:\\WINDOWS\\System32\\cfgmgr32.dll",
+    "C:\\WINDOWS\\System32\\bcryptPrimitives.dll",
+    "C:\\WINDOWS\\System32\\IMM32.DLL",
+    "C:\\WINDOWS\\System32\\powrprof.dll",
+    "C:\\WINDOWS\\System32\\UMPDC.dll",
+    "C:\\WINDOWS\\SYSTEM32\\CRYPTBASE.DLL",
+    "C:\\WINDOWS\\system32\\uxtheme.dll",
+    "C:\\WINDOWS\\System32\\combase.dll",
+    "C:\\WINDOWS\\system32\\mswsock.dll",
+    "C:\\WINDOWS\\System32\\kernel.appcore.dll",
+    "C:\\WINDOWS\\System32\\NSI.dll",
+    "C:\\WINDOWS\\SYSTEM32\\dhcpcsvc6.DLL",
+    "C:\\WINDOWS\\SYSTEM32\\dhcpcsvc.DLL",
+    "C:\\WINDOWS\\SYSTEM32\\DNSAPI.dll",
+    "C:\\WINDOWS\\system32\\pnrpnsp.dll",
+    "C:\\WINDOWS\\System32\\winrnr.dll",
+    "C:\\WINDOWS\\system32\\NLAapi.dll"
+  ]
+}

@@ -4,3 +4,5 @@ bin/
 fulfillment/ngrok.exe
 datastore/test/__debug_bin
 fulfillment/test/__debug_bin
+fulfillment/ngrok-stable-windows-amd64.zip
+fulfillment/postback.proto
