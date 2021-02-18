@@ -38,3 +38,4 @@
     ```bash
     gcloud functions deploy 執行函數名稱 --source https://source.developers.google.com/projects/parkingproject-261207/repos/github_wei02427_linebotproject/moveable-aliases/master/paths/資料夾名稱 --runtime=go113 --trigger-http --allow-unauthenticated
     ```
+![image](https://github.com/BoWeii/LineBotProject/blob/master/pic1.jpg)
